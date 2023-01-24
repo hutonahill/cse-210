@@ -1,17 +1,187 @@
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 class Program
 {
-    static void Main(string[] args)
-    {
-        Console.WriteLine("Hello Sandbox World!");
+    private List<DateDataType> dates;
+
+    static void Main(string[] args){
+
+        bool running = true;
+        
+        while (running == true){
+            //read the prompts into a list
+            string text =  File.ReadAllText(@"prompts.json");
+            var getPrompts = JsonSerializer.Deserialize<promptJson>(text);
+
+            List<string> prompts = getPrompts.prompts;
+
+            // read a list of dates with posts and the posts
+
+            text = File.ReadAllText(@"entries.json");
+            var getEntries = JsonSerializer.Deserialize<entriesJson>(text);
+
+            List<string> datesWithEntires = getEntries.datesWithEntires;
+
+            List<entryDataType> entries = getEntries.entries;
+
+
+            print("Welcome to Journal.cs");
+
+            print("Would you like to make a new entry, view entries or quit? (1/2/3)");
+
+            bool validInput = false;
+
+            string path = "";
+            string userInput;
+
+            // get input from the user to determin what to do.
+            while (validInput == false){
+                userInput = input().ToLower();
+
+                if (userInput == "entry" || userInput == "new" || 
+                    userInput == "new entry"){
+                        path = "new";
+                        validInput = true;
+                }
+
+                else if (userInput == "old" || userInput == "view" || 
+                    userInput == "view entries" || userInput == "2"){
+                        path = "old";
+                        validInput = true;
+                }
+
+                else if (userInput == "quit" || userInput == "3"){
+                    path = "quit";
+                    validInput = true;
+                }
+
+                else if (userInput == "new prompt" || userInput == "4"){
+                    path = "prompt";
+                    validInput = true;
+                }
+
+                else if (userInput == "help" || userInput == "5"){
+                    path = "help";
+                    validInput = true;
+                }
+
+                else if (userInput == "wipe entries"){
+                    path = "wipe";
+                    validInput = true;
+                }
+                else{
+                    print("that command is not recognised. Please try agean, or " + 
+                    "type 'help'");
+                }
+
+            }
+
+            if (path == "new"){
+                newEntry();
+            }
+            else if(path == "old"){
+                viewEntries();
+            }
+            else if(path == "quit"){
+                running = false;
+            }
+            else if(path == "prompt"){
+                newPrompt();
+            }
+            else if (path == "help"){
+                help();
+            }
+            else if (path == "wipe"){
+                wipe();
+            }
+            else{
+                throw new Exception($"Invalid Path: {path}");
+            }
+
+
+
+            // write data to the file when done
+            List<entriesJson> writeEntries = new List<entriesJson>();
+
+            writeEntries.Add(new entriesJson(){
+                // datesWithEntires = 
+                // entries = 
+            });
+            
+            string json = JsonSerializer.Serialize(entries);
+            File.WriteAllText(@"entries.json", json);
+        }
     }
+
+    static void newEntry(){
+        print("entry");
+    }
+
+    static void viewEntries(){
+        print("view");
+    }
+
+    static void help(){
+        string output = ($"1 New Entry:" + 
+            $"\n    Valid inputs: 'new', 'new entry', '1'" + 
+            $"\n    Discription: Offers the user a prompt and lets them input " + 
+            " a jorunal entry." + 
+            $"\n" +
+            $"\n2 View Entries:" + 
+            $"\n    Valid inputs: 'old', 'view', 'view entries', '2'" + 
+            $"\n    Discription: Prints all posts in order of input." + 
+            $"\n" + 
+            $"\n3 Quit:" + 
+            $"\n    Valid inputs: 'quit', '3'" + 
+            $"\n    Discription: exits the application." + 
+            $"\n" + 
+            $"\n4 New Prompt:" + 
+            $"\n    Valid inputs: 'new prompt', '4'" + 
+            $"\n    Discripiton: allows the user to add a new Journal prompt." +
+            $"\n" + 
+            $"\n5 Wipe Entries: " + 
+            $"\n    Valid inputs: 'wipe entries' " + 
+            $"\n    Discription: deletes all journal entreies. " +
+            "IMPOSIPLE TO REVERCE.");
+        
+        print(output);
+    }
+
+    static void newPrompt(){
+        print("new");
+    }
+
+    static void wipe(){
+        print("wipe");
+    }
+
+
+    static void print(string msg){
+        Console.WriteLine(msg);
+    }
+
+    static string input(){
+        return Console.ReadLine();
+    }
+}
+
+// a class define the structure of prompt.json
+class promptJson{
+    public List<string> prompts { get; set; }
+}
+
+// a class to define the structure of entries.json
+class entriesJson{
+    public List<string> datesWithEntires { get; set; }
+    public List<entryDataType> entries { get; set; }
 }
 
 class entryDataType{
     
     private string prompt;
-    private string entry;
+    private string responce;
 
     private DateDataType date;
 
@@ -20,8 +190,8 @@ class entryDataType{
         prompt = promptValue;
     }
 
-    public void setEntry(string entryValue){
-        entry = entryValue;
+    public void setResponce(string entryValue){
+        responce = entryValue;
     }
 
     public Boolean setDate(DateDataType dateValue){
@@ -30,6 +200,13 @@ class entryDataType{
 
         // check to make sure all three values of DateDataType are
         // are included.
+
+        if (dateValue.isComplete() == true){
+            date = dateValue;
+        }
+        else{
+            throw new ArgumentException("Input dataValue is incomplete.");
+        }
 
         return validInput;
     }
@@ -40,8 +217,8 @@ class entryDataType{
         return prompt;
     }
 
-    public string getEntry(){
-        return entry;
+    public string getResponce(){
+        return responce;
     }
 
     public DateDataType GetDateDataType(){
@@ -51,13 +228,14 @@ class entryDataType{
     // fucntions
     public string display(){
 
-        string output = "";
+        string displayDate = date.display();
 
-        return output;
+        return ($"{displayDate}" + 
+            $"\n    Prompt: {prompt}" + 
+            $"\n    Responce: {responce}");
 
     }
 }
-
 
 class DateDataType{
     // set variables to -1 by default
@@ -72,6 +250,37 @@ class DateDataType{
     };
 
     public DateDataType(){
+    }
+
+    public DateDataType(int dayValue, int monthValue, int yearValue){
+
+        error yearError = checkYear(yearValue);
+        if (yearError.checkError() == false){
+            year = yearValue;
+
+            error monthError = checkMonth(monthValue);
+
+            if (monthError.checkError() == false){
+                month = monthValue;
+
+                error dayError = checkDay(dayValue, month, year);
+
+                if (dayError.checkError() == false){
+                    day = dayValue;
+                }
+                else{
+                    throw new ArgumentException(dayError.readMsg());
+                }
+            }
+            else{
+                throw new ArgumentException(monthError.readMsg());
+            }
+        }
+        else{
+            throw new ArgumentException(yearError.readMsg());
+        }
+
+        
     }
 
     // Setters
@@ -216,7 +425,7 @@ class DateDataType{
         error yearError = new error();
         
         if (yearValue < 0){
-            yearError.raiseError("You must input a year greater than 0.")
+            yearError.raiseError("You must input a year greater than 0.");
         }
 
         return yearError;
@@ -259,7 +468,16 @@ class DateDataType{
 
     // Functions
     public string display(){
-        return($"{month}/{day}/{year}")
+        return($"{month}/{day}/{year}");
+    }
+
+    public bool isComplete(){
+        if ((day > -1) && (month > -1) && (year > -1)){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 }
 
