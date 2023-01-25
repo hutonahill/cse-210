@@ -1,76 +1,87 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Globalization;
 
-class Program
-{
-    private List<DateDataType> dates;
+class Program{
+    
+    private static List<string> newEntryCmds = new List<string>{
+        "entry", "new", "new entry", "1"
+    };
+
+    private static List<string> viewEntriesCmds = new List<string>{
+        "old", "view", "view entries", "2"
+    };
+
+    private static List<string> quitCmds = new List<string>{
+        "quit", "exit", "3"
+    };
+
+    private static List<string> newPromptCmds = new List<string>{
+        "new prompt", "4"
+    };
+
+    private static List<string> helpCmds = new List<string>{
+        "help", "5"
+    };
+
+    private static List<string> wipeCmds = new List<string>{
+        "wipe entries"
+    };
 
     static void Main(string[] args){
 
         bool running = true;
         
         while (running == true){
-            //read the prompts into a list
-            string text =  File.ReadAllText(@"prompts.json");
-            var getPrompts = JsonSerializer.Deserialize<promptJson>(text);
+            
 
-            List<string> prompts = getPrompts.prompts;
-
-            // read a list of dates with posts and the posts
-
-            text = File.ReadAllText(@"entries.json");
-            var getEntries = JsonSerializer.Deserialize<entriesJson>(text);
-
-            List<string> datesWithEntires = getEntries.datesWithEntires;
-
-            List<entryDataType> entries = getEntries.entries;
-
-
-            print("Welcome to Journal.cs");
-
-            print("Would you like to make a new entry, view entries or quit? (1/2/3)");
+            print($"\nWelcome to Journal.cs\n");
 
             bool validInput = false;
 
             string path = "";
             string userInput;
+            // create lists that contain valid commands
+            
 
             // get input from the user to determin what to do.
             while (validInput == false){
-                userInput = input().ToLower();
+                userInput = input("Would you like to make " +
+                "a new entry, view entries or quit? (1/2/3): ").ToLower();
 
-                if (userInput == "entry" || userInput == "new" || 
-                    userInput == "new entry"){
+                // entry command
+                if (newEntryCmds.Contains(userInput)){
                         path = "new";
                         validInput = true;
                 }
 
-                else if (userInput == "old" || userInput == "view" || 
-                    userInput == "view entries" || userInput == "2"){
+                // 
+                else if (viewEntriesCmds.Contains(userInput)){
                         path = "old";
                         validInput = true;
                 }
 
-                else if (userInput == "quit" || userInput == "3"){
+                else if (quitCmds.Contains(userInput)){
                     path = "quit";
                     validInput = true;
                 }
 
-                else if (userInput == "new prompt" || userInput == "4"){
+                else if (newPromptCmds.Contains(userInput)){
                     path = "prompt";
                     validInput = true;
                 }
 
-                else if (userInput == "help" || userInput == "5"){
+                else if (helpCmds.Contains(userInput)){
                     path = "help";
                     validInput = true;
                 }
 
-                else if (userInput == "wipe entries"){
+                else if (wipeCmds.Contains(userInput)){
                     path = "wipe";
                     validInput = true;
                 }
+
                 else{
                     print("that command is not recognised. Please try agean, or " + 
                     "type 'help'");
@@ -81,85 +92,251 @@ class Program
             if (path == "new"){
                 newEntry();
             }
+
             else if(path == "old"){
                 viewEntries();
             }
+
             else if(path == "quit"){
                 running = false;
             }
+
             else if(path == "prompt"){
                 newPrompt();
             }
+
             else if (path == "help"){
                 help();
             }
+
             else if (path == "wipe"){
                 wipe();
             }
+
             else{
                 throw new Exception($"Invalid Path: {path}");
             }
 
+            print("");
 
-
-            // write data to the file when done
-            List<entriesJson> writeEntries = new List<entriesJson>();
-
-            writeEntries.Add(new entriesJson(){
-                // datesWithEntires = 
-                // entries = 
-            });
-            
-            string json = JsonSerializer.Serialize(entries);
-            File.WriteAllText(@"entries.json", json);
         }
+        
+        print($"Stoped. \n");
+
+
+        
     }
 
+
     static void newEntry(){
-        print("entry");
+
+        // read a list of dates with posts and the posts
+        string jsonString = File.ReadAllText(@"entries.json");
+        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
+
+        List<string> datesWithEntiresExtracted = getEntries.datesWithEntires;
+
+        List<string> entriesExtracted = getEntries.entries;
+
+        // get the date and put it into a date object
+        DateTime whatsToday = DateTime.Now;
+
+        DateDataType today = new DateDataType(whatsToday.Day, whatsToday.Month, 
+        whatsToday.Year);
+
+        // check to an entry has been made today
+        if (datesWithEntiresExtracted == null){
+            datesWithEntiresExtracted = new List<string>();
+            entriesExtracted = new List<string>();
+        }
+
+        if (datesWithEntiresExtracted.Contains(today.display())){
+            print("You have already made an entry today, " + 
+            "Please come back tomarrow.");
+        }
+
+        else{
+            //read the prompts into a list
+            string rawPrompt =  File.ReadAllText(@"prompts.json");
+            promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(rawPrompt)!;
+
+            List<string> prompts = getPrompts.prompts;
+
+            // pick a random prompt from the prompts list
+            Random randomGen = new Random();
+
+            string displayPrompt = prompts[randomGen.Next(prompts.Count)];
+
+            // display the prompt to the user
+            print(displayPrompt);
+
+            // Get the users responce.
+            string userInput = input();
+
+
+            EntryDataType todaysEntry = new EntryDataType(displayPrompt, 
+            userInput, today);
+
+            // save the new entry to the lists
+            datesWithEntiresExtracted.Add(today.display());
+            entriesExtracted.Add(todaysEntry.encode());
+
+            // save the modified lists to a format object
+            EntriesJson entriesJson = new EntriesJson{
+                datesWithEntires = datesWithEntiresExtracted,
+                entries = entriesExtracted
+            };
+
+            // parce the format object into a sting
+            jsonString = JsonSerializer.Serialize<EntriesJson>(entriesJson);
+
+            // save the string to a file
+            File.WriteAllText("entries.json", jsonString);
+        }
+
     }
 
     static void viewEntries(){
-        print("view");
+
+        // read the contance of the file to a string.
+        string jsonString = File.ReadAllText(@"entries.json");
+
+        // parce the string into the format object
+        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
+
+        // get the data from the format object in a form we can easily read.
+        List<EntryDataType> entryList = new List<EntryDataType>();
+        List<string> entriesExtracted = getEntries.entries;
+
+        // check to make sure there are entreis to read
+        if (entriesExtracted == null){
+            print("there are no posts");
+        }
+        else{
+            // for each item add the data to a new entryDataType object and display
+            // and display it to the user.
+            for (int i = 0; i < entriesExtracted.Count; i++){
+                entryList.Add(new EntryDataType());
+
+                entryList[i].decode(getEntries.entries[i]);
+
+                print();
+                print(entryList[i].display());
+                
+            }
+        }
+        
+        
     }
 
     static void help(){
-        string output = ($"1 New Entry:" + 
-            $"\n    Valid inputs: 'new', 'new entry', '1'" + 
+
+        //create input string
+        string newEntryList = cmdListDisplay(newEntryCmds);
+
+        string viewEntriesList = cmdListDisplay(viewEntriesCmds);
+
+        string quitList = cmdListDisplay(quitCmds);
+
+        string newPromptList = cmdListDisplay(newPromptCmds);
+
+        string wipeList = cmdListDisplay(wipeCmds);
+
+        string output = ($"Commands:\n1 New Entry:" + 
+            $"\n    Valid inputs: {newEntryList}" + 
             $"\n    Discription: Offers the user a prompt and lets them input " + 
             " a jorunal entry." + 
             $"\n" +
             $"\n2 View Entries:" + 
-            $"\n    Valid inputs: 'old', 'view', 'view entries', '2'" + 
+            $"\n    Valid inputs: {viewEntriesList}" + 
             $"\n    Discription: Prints all posts in order of input." + 
             $"\n" + 
             $"\n3 Quit:" + 
-            $"\n    Valid inputs: 'quit', '3'" + 
+            $"\n    Valid inputs: {quitList}" + 
             $"\n    Discription: exits the application." + 
             $"\n" + 
             $"\n4 New Prompt:" + 
-            $"\n    Valid inputs: 'new prompt', '4'" + 
+            $"\n    Valid inputs: {newPromptList}" + 
             $"\n    Discripiton: allows the user to add a new Journal prompt." +
             $"\n" + 
             $"\n5 Wipe Entries: " + 
-            $"\n    Valid inputs: 'wipe entries' " + 
+            $"\n    Valid inputs: {wipeList} " + 
             $"\n    Discription: deletes all journal entreies. " +
             "IMPOSIPLE TO REVERCE.");
         
         print(output);
     }
 
+    static string cmdListDisplay(List<string> cmdList){
+        string output = "";
+        string copyData;
+
+        // format each command
+        for (int i = 0; i< cmdList.Count; i++){
+            copyData = $"'{cmdList[i]}',";
+            output = output + copyData;
+        }
+        
+        // remove the ',' from the end of teh string
+        output = output.Remove(output.Length - 1, 1);
+
+        return output;
+    }
+
     static void newPrompt(){
-        print("new");
+        // read the contance of the file to a string.
+        string jsonString = File.ReadAllText(@"prompts.json");
+
+        // parce the string into the format object
+        promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(jsonString)!;
+
+        // get the data from the format object in a form we can easily read.
+        List<string> promptList = getPrompts.prompts;
+
+        string newPrompt = input("Input the new prompt: ");
+
+        promptList.Add(newPrompt);
+
+        // save the modified list to a new instance of the format object
+        promptJson savePrompts = new promptJson{
+            prompts = promptList
+        };
+
+        // parce the object into a json string
+        jsonString = JsonSerializer.Serialize<promptJson>(savePrompts);
+
+        // save the parced string to a file.
+        File.WriteAllText(@"prompts.json", jsonString);
+
+
+
+
     }
 
     static void wipe(){
-        print("wipe");
+        
+
+        EntriesJson blankEntries = new EntriesJson();
+
+        string jsonString = JsonSerializer.Serialize<EntriesJson>(blankEntries);
+        
+        File.WriteAllText(@"entries.json", jsonString);
+
+        print("All entreis wiped.");
     }
 
 
     static void print(string msg){
         Console.WriteLine(msg);
+    }
+
+    static void print(){
+        Console.WriteLine();
+    }
+
+    static string input(string prompt){
+        Console.Write(prompt);
+        return Console.ReadLine();
     }
 
     static string input(){
@@ -173,17 +350,28 @@ class promptJson{
 }
 
 // a class to define the structure of entries.json
-class entriesJson{
+class EntriesJson{
     public List<string> datesWithEntires { get; set; }
-    public List<entryDataType> entries { get; set; }
+    public List<string> entries { get; set; }
 }
 
-class entryDataType{
+class EntryDataType{
     
     private string prompt;
     private string responce;
 
     private DateDataType date;
+
+    public EntryDataType(){
+
+    }
+
+    public EntryDataType(string promptValue, string responceValue, 
+    DateDataType dateValue){
+        setPrompt(promptValue);
+        setResponce(responceValue);
+        setDate(dateValue);
+    }
 
     // setters
     public void setPrompt(string promptValue){
@@ -235,6 +423,29 @@ class entryDataType{
             $"\n    Responce: {responce}");
 
     }
+
+    public string encode(){
+        return $"{prompt}"+"\\" + $"{responce}" + "\\" + $"{date.display()}";
+    }
+
+    public void decode(string code){
+        
+        string[] parts1 = code.Replace("\\","-").Split('-');
+
+        prompt = parts1[0];
+        responce = parts1[1];
+
+        string[] dateParce = parts1[2].Split("/");
+
+
+        int month = Int32.Parse(dateParce[0]);
+
+        int day = Int32.Parse(dateParce[1]);
+
+        int year = Int32.Parse(dateParce[2]);
+
+        date = new DateDataType(day, month, year);
+    }
 }
 
 class DateDataType{
@@ -254,16 +465,16 @@ class DateDataType{
 
     public DateDataType(int dayValue, int monthValue, int yearValue){
 
-        error yearError = checkYear(yearValue);
+        myError yearError = checkYear(yearValue);
         if (yearError.checkError() == false){
             year = yearValue;
 
-            error monthError = checkMonth(monthValue);
+            myError monthError = checkMonth(monthValue);
 
             if (monthError.checkError() == false){
                 month = monthValue;
 
-                error dayError = checkDay(dayValue, month, year);
+                myError dayError = checkDay(dayValue, month, year);
 
                 if (dayError.checkError() == false){
                     day = dayValue;
@@ -284,9 +495,9 @@ class DateDataType{
     }
 
     // Setters
-    public error setDay(int dayValue){
+    public myError setDay(int dayValue){
         
-        error dayError;
+        myError dayError;
 
         if (month > -1){
             if (year > -1){
@@ -307,8 +518,8 @@ class DateDataType{
         return dayError;
     }
 
-    public error setMonth(int monthValue){
-        error monthError = checkMonth(monthValue);
+    public myError setMonth(int monthValue){
+        myError monthError = checkMonth(monthValue);
 
         if (monthError.checkError() == false){
             month = monthValue;
@@ -317,8 +528,8 @@ class DateDataType{
         return monthError;
     }
 
-    public error setYear(int yearValue){
-        error yearError = checkYear(yearValue);
+    public myError setYear(int yearValue){
+        myError yearError = checkYear(yearValue);
 
         if (yearError.checkError() == false){
             year = yearValue;
@@ -332,8 +543,8 @@ class DateDataType{
 
     // Error checkers
 
-    private error checkDay(int dayValue){
-        error dayError = new error();
+    private myError checkDay(int dayValue){
+        myError dayError = new myError();
 
         if (((1 <= dayValue) || (dayValue <= 31)) == false){
             dayError.raiseError("You must input a day between 1 and 31");
@@ -342,8 +553,8 @@ class DateDataType{
         return dayError;
     }
 
-    private error checkDay(int dayValue, int monthValue){
-        error dayError = new error();
+    private myError checkDay(int dayValue, int monthValue){
+        myError dayError = new myError();
 
         int monthIndex = monthValue - 1;
 
@@ -369,8 +580,8 @@ class DateDataType{
         return dayError;
     }
 
-    private error checkDay(int dayValue, int monthValue, int yearValue){
-        error dayError = new error();
+    private myError checkDay(int dayValue, int monthValue, int yearValue){
+        myError dayError = new myError();
 
         int monthIndex = monthValue - 1;
 
@@ -411,8 +622,8 @@ class DateDataType{
 
     }
 
-    private error checkMonth(int monthValue){
-        error monthError = new error();
+    private myError checkMonth(int monthValue){
+        myError monthError = new myError();
         
         if ((1 <= monthValue) && (monthValue <= 12) == false){
             monthError.raiseError("You must input a month between 1 and 12");
@@ -421,8 +632,8 @@ class DateDataType{
         return monthError;
     }
     
-    private error checkYear(int yearValue){
-        error yearError = new error();
+    private myError checkYear(int yearValue){
+        myError yearError = new myError();
         
         if (yearValue < 0){
             yearError.raiseError("You must input a year greater than 0.");
@@ -481,12 +692,12 @@ class DateDataType{
     }
 }
 
-class error{
+class myError{
     private bool isError = false;
 
     private string errorMsg = "";
 
-    public error(){
+    public myError(){
 
     }
 
@@ -504,6 +715,5 @@ class error{
     public string readMsg(){
         return errorMsg;
     }
-
-
 }
+
