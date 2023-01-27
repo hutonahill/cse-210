@@ -32,11 +32,11 @@ class Program{
                 newEntryTemp, viewEntriesTemp, newPromptTemp, wipeTemp, quitTemp
             };
 
-            Dictionary<string, object> registeredCommands = new Dictionary<string, object>();
+            Dictionary<string, commandClass> registeredCommands = new Dictionary<string, commandClass>();
 
             for (int i = 0; i < commandObjects.Count; i++){
                 List<string> targetCommandList = new List<string>(
-                    commandObjects[i].getCommandInputs()
+                    commandObjects[i].CommandInputs
                 );
 
                 for (int j = 0; j < targetCommandList.Count; j++){
@@ -49,10 +49,16 @@ class Program{
             userInput = input("Would you like to make a new entry, view entries or quit? (1/2/3): ");
 
             if (userInput == "help"){
-                help();
+                help(commandObjects);
             }
             else{
-                List<string> keys = new List<string>(registeredCommands.Keys);
+                try{
+                    registeredCommands[userInput].run();
+                }
+                catch (KeyNotFoundException){
+                    print("Invalid command. Please try agran or run 'help' to " + 
+                    "a list of valid commands");
+                }
             }
             
             print("");
@@ -69,9 +75,9 @@ class Program{
 
         for (int i = 0; i < commands.Count; i++){
             commandClass targetCommand = commands[i];
-            output = ($"\n{i} {targetCommand.getTitle()}" + 
+            output = ($"\n{i} {targetCommand.Title}" + 
                     $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
-                    $"\n    Discription: {targetCommand.getDiscription()}" + 
+                    $"\n    Discription: {targetCommand.Discription}" + 
                     $"\n");
         }
         
@@ -486,52 +492,24 @@ class myError{
 }
 
 
-// command classes
 
-// required methods
-// getTitle
-//      returns string title
-// getDiscription
-//      reutrns string discription
-// getCommandInputs
-//      returns List<strging> containing valid command inputs
-// displayCommandInputs
-//      returns a formatted string containing all valid command inputs.
-// run
-//      preforms the commands function
+// command class framework
+abstract class commandClass{
 
-public interface commandClass{
-    public string getTitle(){
-        return"filler";
+    public abstract string Title{
+        get;
+        protected set;
     }
 
-    public string getDiscription(){
-        return "filler";
+    public abstract string Discription{
+        get;
+        protected set;
     }
 
-    public List<string> getCommandInputs(){
-        return new List<string>();
+    public abstract List<string> CommandInputs {
+        get;
+        protected set;
     }
-
-    public string displayCommandInputs(){
-        return"filler";
-    }
-
-    public void run(){}
-
-}
-
-//defalut commands
-class Quit:commandClass{
-
-
-    private string Title = "Quit";
-
-    private string Discription = "exits the application.";
-
-    private List<string> CommandInputs = new List<string>{
-        "quit", "exit", "3"
-    };
 
     public string displayCommandInputs(){
         string output = "";
@@ -549,19 +527,32 @@ class Quit:commandClass{
         return output;
     }
 
-    public string getTitle(){
-        return Title;
-    }
+    public abstract void run();
 
-    public string getDiscription(){
-        return Discription;
-    }
+}
 
-    public List<string> getCommandInputs(){
-        return CommandInputs;
-    }
+//defalut commands
+class Quit:commandClass{
 
-    public void run(){
+
+    public override string Title{
+        get;
+        protected set;
+    } = "Quit";
+
+    public override string Discription{
+        get;
+        protected set;
+    } = "exits the application.";
+
+    public override List<string> CommandInputs{
+        get;
+        protected set;
+    } = new List<string>{
+        "quit", "exit", "3"
+    };
+
+    public override void run(){
         Program.running = false;
     }
 }
@@ -570,43 +561,24 @@ class Quit:commandClass{
 class newEntry:commandClass{
 
 
-    private string Title = "New Entry";
+    public override string Title{
+        get;
+        protected set;
+    } = "New Entry";
 
-    private string Discription = "Offers the user a prompt and lets them input.";
+    public override string Discription{
+        get;
+        protected set;
+    } = "Offers the user a prompt and lets them input.";
 
-    private List<string> CommandInputs = new List<string>{
+    public override List<string> CommandInputs{
+        get;
+        protected set;
+    } = new List<string>{
         "entry", "new", "new entry", "1"
     };
 
-    public string displayCommandInputs(){
-        string output = "";
-        string copyData;
-
-        // format each command
-        for (int i = 0; i< CommandInputs.Count; i++){
-            copyData = $"'{CommandInputs[i]}',";
-            output = output + copyData;
-        }
-        
-        // remove the ',' from the end of teh string
-        output = output.Remove(output.Length - 1, 1);
-
-        return output;
-    }
-
-    public string getTitle(){
-        return Title;
-    }
-
-    public string getDiscription(){
-        return Discription;
-    }
-
-    public List<string> getCommandInputs(){
-        return CommandInputs;
-    }
-
-    public void run(){
+    public override void run(){
 
         // read a list of dates with posts and the posts
         string jsonString = File.ReadAllText(@"entries.json");
@@ -678,44 +650,25 @@ class newEntry:commandClass{
 
 class viewEntries:commandClass{
 
-    private string Title = "View Entries";
+    public override string Title{
+        get;
+        protected set;
+    } = "View Entries";
 
 
-    private string Discription = "Prints all posts in order of input.";
+    public override string Discription{
+        get;
+        protected set;
+    } = "Prints all posts in order of input.";
 
-    private List<string> CommandInputs = new List<string>{
+    public override List<string> CommandInputs{
+        get;
+        protected set;
+    } = new List<string>{
         "old", "view", "view entries", "2"
     };
 
-    public string displayCommandInputs(){
-        string output = "";
-        string copyData;
-
-        // format each command
-        for (int i = 0; i< CommandInputs.Count; i++){
-            copyData = $"'{CommandInputs[i]}',";
-            output = output + copyData;
-        }
-        
-        // remove the ',' from the end of teh string
-        output = output.Remove(output.Length - 1, 1);
-
-        return output;
-    }
-
-    public string getTitle(){
-        return Title;
-    }
-
-    public string getDiscription(){
-        return Discription;
-    }
-
-    public List<string> getCommandInputs(){
-        return CommandInputs;
-    }
-
-    public void run(){
+    public override void run(){
         // read the contance of the file to a string.
         string jsonString = File.ReadAllText(@"entries.json");
 
@@ -749,43 +702,24 @@ class viewEntries:commandClass{
 
 class newPrompt:commandClass{
     
-    private string Title = "New Prompt";
+    public override string Title{
+        get;
+        protected set;
+    } = "New Prompt";
 
-    private string Discription = "allows the user to add a new Journal prompt.";
+    public override string Discription{
+        get;
+        protected set;
+    } = "allows the user to add a new Journal prompt.";
 
-    private List<string> CommandInputs = new List<string>{
+    public override List<string> CommandInputs{
+        get;
+        protected set;
+    } = new List<string>{
         "new prompt", "4"
     };
 
-    public string displayCommandInputs(){
-        string output = "";
-        string copyData;
-
-        // format each command
-        for (int i = 0; i< CommandInputs.Count; i++){
-            copyData = $"'{CommandInputs[i]}',";
-            output = output + copyData;
-        }
-        
-        // remove the ',' from the end of teh string
-        output = output.Remove(output.Length - 1, 1);
-
-        return output;
-    }
-
-    public string getTitle(){
-        return Title;
-    }
-
-    public string getDiscription(){
-        return Discription;
-    }
-
-    public List<string> getCommandInputs(){
-        return CommandInputs;
-    }
-
-    public void run(){
+    public override void run(){
         // read the contance of the file to a string.
         string jsonString = File.ReadAllText(@"prompts.json");
 
@@ -815,44 +749,25 @@ class newPrompt:commandClass{
 
 class wipeEntries:commandClass{
 
-    private string Title = "Wipe Entries";
+    public override string Title{
+        get;
+        protected set;
+    } = "Wipe Entries";
 
 
-    private string Discription = "deletes all journal entreies. IMPOSIPLE TO REVERCE.";
+    public override string Discription{
+        get;
+        protected set;
+    } = "deletes all journal entreies. IMPOSIPLE TO REVERCE.";
 
-    private List<string> CommandInputs = new List<string>{
+    public override List<string> CommandInputs{
+        get;
+        protected set;
+    } = new List<string>{
         "wipe entries"
     };
 
-    public string displayCommandInputs(){
-        string output = "";
-        string copyData;
-
-        // format each command
-        for (int i = 0; i< CommandInputs.Count; i++){
-            copyData = $"'{CommandInputs[i]}',";
-            output = output + copyData;
-        }
-        
-        // remove the ',' from the end of teh string
-        output = output.Remove(output.Length - 1, 1);
-
-        return output;
-    }
-
-    public string getTitle(){
-        return Title;
-    }
-
-    public string getDiscription(){
-        return Discription;
-    }
-
-    public List<string> getCommandInputs(){
-        return CommandInputs;
-    }
-
-    public void run(){
+    public override void run(){
          EntriesJson blankEntries = new EntriesJson();
 
         string jsonString = JsonSerializer.Serialize<EntriesJson>(blankEntries);
