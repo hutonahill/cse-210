@@ -29,7 +29,7 @@ class Program{
 
             //create a dict with valid commands and there outcomes
             List<commandClass> commandObjects = new List<commandClass>{
-                newEntryTemp, viewEntriesTemp, newPromptTemp, wipeTemp, quitTemp
+                newEntryTemp, viewEntriesTemp, quitTemp, newPromptTemp, wipeTemp
             };
 
             Dictionary<string, commandClass> registeredCommands = new Dictionary<string, commandClass>();
@@ -75,7 +75,7 @@ class Program{
 
         for (int i = 0; i < commands.Count; i++){
             commandClass targetCommand = commands[i];
-            output = ($"\n{i} {targetCommand.Title}" + 
+            output = output + ($"\n{i} {targetCommand.Title}" + 
                     $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
                     $"\n    Discription: {targetCommand.Discription}" + 
                     $"\n");
