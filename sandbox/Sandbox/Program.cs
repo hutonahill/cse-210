@@ -4,265 +4,76 @@ using System.Text.Json.Serialization;
 using System.Globalization;
 
 class Program{
-    
-    private static List<string> newEntryCmds = new List<string>{
-        "entry", "new", "new entry", "1"
-    };
 
-    private static List<string> viewEntriesCmds = new List<string>{
-        "old", "view", "view entries", "2"
-    };
+    private static newEntry newEntryTemp = new newEntry();
 
-    private static List<string> quitCmds = new List<string>{
-        "quit", "exit", "3"
-    };
+    private static viewEntries viewEntriesTemp = new viewEntries();
 
-    private static List<string> newPromptCmds = new List<string>{
-        "new prompt", "4"
-    };
+    private static newPrompt newPromptTemp = new newPrompt();
 
-    private static List<string> helpCmds = new List<string>{
-        "help", "5"
-    };
+    private static wipeEntries wipeTemp = new wipeEntries();
 
-    private static List<string> wipeCmds = new List<string>{
-        "wipe entries"
-    };
+    private static Quit quitTemp = new Quit();
+
+    public static bool running = true;
 
     static void Main(string[] args){
 
-        bool running = true;
         
         while (running == true){
             
 
-            print($"\nWelcome to Journal.cs\n");
+            print($"\n== Welcome to Journal.cs ==\n");
 
-            bool validInput = false;
-
-            string path = "";
             string userInput;
-            // create lists that contain valid commands
+
+            //create a dict with valid commands and there outcomes
+            List<commandClass> commandObjects = new List<commandClass>{
+                newEntryTemp, viewEntriesTemp, newPromptTemp, wipeTemp, quitTemp
+            };
+
+            Dictionary<string, object> registeredCommands = new Dictionary<string, object>();
+
+            for (int i = 0; i < commandObjects.Count; i++){
+                List<string> targetCommandList = new List<string>(
+                    commandObjects[i].getCommandInputs()
+                );
+
+                for (int j = 0; j < targetCommandList.Count; j++){
+                    registeredCommands.Add(targetCommandList[j], commandObjects[i]);
+                }
+            }
             
 
             // get input from the user to determin what to do.
-            while (validInput == false){
-                userInput = input("Would you like to make " +
-                "a new entry, view entries or quit? (1/2/3): ").ToLower();
+            userInput = input("Would you like to make a new entry, view entries or quit? (1/2/3): ");
 
-                // entry command
-                if (newEntryCmds.Contains(userInput)){
-                        path = "new";
-                        validInput = true;
-                }
-
-                // 
-                else if (viewEntriesCmds.Contains(userInput)){
-                        path = "old";
-                        validInput = true;
-                }
-
-                else if (quitCmds.Contains(userInput)){
-                    path = "quit";
-                    validInput = true;
-                }
-
-                else if (newPromptCmds.Contains(userInput)){
-                    path = "prompt";
-                    validInput = true;
-                }
-
-                else if (helpCmds.Contains(userInput)){
-                    path = "help";
-                    validInput = true;
-                }
-
-                else if (wipeCmds.Contains(userInput)){
-                    path = "wipe";
-                    validInput = true;
-                }
-
-                else{
-                    print("that command is not recognised. Please try agean, or " + 
-                    "type 'help'");
-                }
-
-            }
-
-            if (path == "new"){
-                newEntry();
-            }
-
-            else if(path == "old"){
-                viewEntries();
-            }
-
-            else if(path == "quit"){
-                running = false;
-            }
-
-            else if(path == "prompt"){
-                newPrompt();
-            }
-
-            else if (path == "help"){
+            if (userInput == "help"){
                 help();
             }
-
-            else if (path == "wipe"){
-                wipe();
-            }
-
             else{
-                throw new Exception($"Invalid Path: {path}");
+                List<string> keys = new List<string>(registeredCommands.Keys);
             }
-
+            
             print("");
 
         }
         
         print($"Stoped. \n");
 
-
-        
     }
 
+    static void help(List<commandClass> commands){
+    
+        string output = "Commands";
 
-    static void newEntry(){
-
-        // read a list of dates with posts and the posts
-        string jsonString = File.ReadAllText(@"entries.json");
-        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
-
-        List<string> datesWithEntiresExtracted = getEntries.datesWithEntires;
-
-        List<string> entriesExtracted = getEntries.entries;
-
-        // get the date and put it into a date object
-        DateTime whatsToday = DateTime.Now;
-
-        DateDataType today = new DateDataType(whatsToday.Day, whatsToday.Month, 
-        whatsToday.Year);
-
-        // check to an entry has been made today
-        if (datesWithEntiresExtracted == null){
-            datesWithEntiresExtracted = new List<string>();
-            entriesExtracted = new List<string>();
+        for (int i = 0; i < commands.Count; i++){
+            commandClass targetCommand = commands[i];
+            output = ($"\n{i} {targetCommand.getTitle()}" + 
+                    $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
+                    $"\n    Discription: {targetCommand.getDiscription()}" + 
+                    $"\n");
         }
-
-        if (datesWithEntiresExtracted.Contains(today.display())){
-            print("You have already made an entry today, " + 
-            "Please come back tomarrow.");
-        }
-
-        else{
-            //read the prompts into a list
-            string rawPrompt =  File.ReadAllText(@"prompts.json");
-            promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(rawPrompt)!;
-
-            List<string> prompts = getPrompts.prompts;
-
-            // pick a random prompt from the prompts list
-            Random randomGen = new Random();
-
-            string displayPrompt = prompts[randomGen.Next(prompts.Count)];
-
-            // display the prompt to the user
-            print(displayPrompt);
-
-            // Get the users responce.
-            string userInput = input();
-
-
-            EntryDataType todaysEntry = new EntryDataType(displayPrompt, 
-            userInput, today);
-
-            // save the new entry to the lists
-            datesWithEntiresExtracted.Add(today.display());
-            entriesExtracted.Add(todaysEntry.encode());
-
-            // save the modified lists to a format object
-            EntriesJson entriesJson = new EntriesJson{
-                datesWithEntires = datesWithEntiresExtracted,
-                entries = entriesExtracted
-            };
-
-            // parce the format object into a sting
-            jsonString = JsonSerializer.Serialize<EntriesJson>(entriesJson);
-
-            // save the string to a file
-            File.WriteAllText("entries.json", jsonString);
-        }
-
-    }
-
-    static void viewEntries(){
-
-        // read the contance of the file to a string.
-        string jsonString = File.ReadAllText(@"entries.json");
-
-        // parce the string into the format object
-        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
-
-        // get the data from the format object in a form we can easily read.
-        List<EntryDataType> entryList = new List<EntryDataType>();
-        List<string> entriesExtracted = getEntries.entries;
-
-        // check to make sure there are entreis to read
-        if (entriesExtracted == null){
-            print("there are no posts");
-        }
-        else{
-            // for each item add the data to a new entryDataType object and display
-            // and display it to the user.
-            for (int i = 0; i < entriesExtracted.Count; i++){
-                entryList.Add(new EntryDataType());
-
-                entryList[i].decode(getEntries.entries[i]);
-
-                print();
-                print(entryList[i].display());
-                
-            }
-        }
-        
-        
-    }
-
-    static void help(){
-
-        //create input string
-        string newEntryList = cmdListDisplay(newEntryCmds);
-
-        string viewEntriesList = cmdListDisplay(viewEntriesCmds);
-
-        string quitList = cmdListDisplay(quitCmds);
-
-        string newPromptList = cmdListDisplay(newPromptCmds);
-
-        string wipeList = cmdListDisplay(wipeCmds);
-
-        string output = ($"Commands:\n1 New Entry:" + 
-            $"\n    Valid inputs: {newEntryList}" + 
-            $"\n    Discription: Offers the user a prompt and lets them input " + 
-            " a jorunal entry." + 
-            $"\n" +
-            $"\n2 View Entries:" + 
-            $"\n    Valid inputs: {viewEntriesList}" + 
-            $"\n    Discription: Prints all posts in order of input." + 
-            $"\n" + 
-            $"\n3 Quit:" + 
-            $"\n    Valid inputs: {quitList}" + 
-            $"\n    Discription: exits the application." + 
-            $"\n" + 
-            $"\n4 New Prompt:" + 
-            $"\n    Valid inputs: {newPromptList}" + 
-            $"\n    Discripiton: allows the user to add a new Journal prompt." +
-            $"\n" + 
-            $"\n5 Wipe Entries: " + 
-            $"\n    Valid inputs: {wipeList} " + 
-            $"\n    Discription: deletes all journal entreies. " +
-            "IMPOSIPLE TO REVERCE.");
         
         print(output);
     }
@@ -283,63 +94,20 @@ class Program{
         return output;
     }
 
-    static void newPrompt(){
-        // read the contance of the file to a string.
-        string jsonString = File.ReadAllText(@"prompts.json");
-
-        // parce the string into the format object
-        promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(jsonString)!;
-
-        // get the data from the format object in a form we can easily read.
-        List<string> promptList = getPrompts.prompts;
-
-        string newPrompt = input("Input the new prompt: ");
-
-        promptList.Add(newPrompt);
-
-        // save the modified list to a new instance of the format object
-        promptJson savePrompts = new promptJson{
-            prompts = promptList
-        };
-
-        // parce the object into a json string
-        jsonString = JsonSerializer.Serialize<promptJson>(savePrompts);
-
-        // save the parced string to a file.
-        File.WriteAllText(@"prompts.json", jsonString);
-
-
-
-
-    }
-
-    static void wipe(){
-        
-
-        EntriesJson blankEntries = new EntriesJson();
-
-        string jsonString = JsonSerializer.Serialize<EntriesJson>(blankEntries);
-        
-        File.WriteAllText(@"entries.json", jsonString);
-
-        print("All entreis wiped.");
-    }
-
-
-    static void print(string msg){
+    public static void print(string msg){
         Console.WriteLine(msg);
     }
 
-    static void print(){
+    public static void print(){
         Console.WriteLine();
     }
 
-    static string input(string prompt){
+    public static string input(string prompt){
         Console.Write(prompt);
         return Console.ReadLine();
     }
 
-    static string input(){
+    public static string input(){
         return Console.ReadLine();
     }
 }
@@ -717,3 +485,381 @@ class myError{
     }
 }
 
+
+// command classes
+
+// required methods
+// getTitle
+//      returns string title
+// getDiscription
+//      reutrns string discription
+// getCommandInputs
+//      returns List<strging> containing valid command inputs
+// displayCommandInputs
+//      returns a formatted string containing all valid command inputs.
+// run
+//      preforms the commands function
+
+public interface commandClass{
+    public string getTitle(){
+        return"filler";
+    }
+
+    public string getDiscription(){
+        return "filler";
+    }
+
+    public List<string> getCommandInputs(){
+        return new List<string>();
+    }
+
+    public string displayCommandInputs(){
+        return"filler";
+    }
+
+    public void run(){}
+
+}
+
+//defalut commands
+class Quit:commandClass{
+
+
+    private string Title = "Quit";
+
+    private string Discription = "exits the application.";
+
+    private List<string> CommandInputs = new List<string>{
+        "quit", "exit", "3"
+    };
+
+    public string displayCommandInputs(){
+        string output = "";
+        string copyData;
+
+        // format each command
+        for (int i = 0; i< CommandInputs.Count; i++){
+            copyData = $"'{CommandInputs[i]}',";
+            output = output + copyData;
+        }
+        
+        // remove the ',' from the end of teh string
+        output = output.Remove(output.Length - 1, 1);
+
+        return output;
+    }
+
+    public string getTitle(){
+        return Title;
+    }
+
+    public string getDiscription(){
+        return Discription;
+    }
+
+    public List<string> getCommandInputs(){
+        return CommandInputs;
+    }
+
+    public void run(){
+        Program.running = false;
+    }
+}
+
+//custom commands
+class newEntry:commandClass{
+
+
+    private string Title = "New Entry";
+
+    private string Discription = "Offers the user a prompt and lets them input.";
+
+    private List<string> CommandInputs = new List<string>{
+        "entry", "new", "new entry", "1"
+    };
+
+    public string displayCommandInputs(){
+        string output = "";
+        string copyData;
+
+        // format each command
+        for (int i = 0; i< CommandInputs.Count; i++){
+            copyData = $"'{CommandInputs[i]}',";
+            output = output + copyData;
+        }
+        
+        // remove the ',' from the end of teh string
+        output = output.Remove(output.Length - 1, 1);
+
+        return output;
+    }
+
+    public string getTitle(){
+        return Title;
+    }
+
+    public string getDiscription(){
+        return Discription;
+    }
+
+    public List<string> getCommandInputs(){
+        return CommandInputs;
+    }
+
+    public void run(){
+
+        // read a list of dates with posts and the posts
+        string jsonString = File.ReadAllText(@"entries.json");
+        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
+
+        List<string> datesWithEntiresExtracted = getEntries.datesWithEntires;
+
+        List<string> entriesExtracted = getEntries.entries;
+
+        // get the date and put it into a date object
+        DateTime whatsToday = DateTime.Now;
+
+        DateDataType today = new DateDataType(whatsToday.Day, whatsToday.Month, 
+        whatsToday.Year);
+
+        // check to an entry has been made today
+        if (datesWithEntiresExtracted == null){
+            datesWithEntiresExtracted = new List<string>();
+            entriesExtracted = new List<string>();
+        }
+
+        if (datesWithEntiresExtracted.Contains(today.display())){
+            Program.print("You have already made an entry today, " + 
+            "Please come back tomarrow.");
+        }
+
+        else{
+            //read the prompts into a list
+            string rawPrompt =  File.ReadAllText(@"prompts.json");
+            promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(rawPrompt)!;
+
+            List<string> prompts = getPrompts.prompts;
+
+            // pick a random prompt from the prompts list
+            Random randomGen = new Random();
+
+            string displayPrompt = prompts[randomGen.Next(prompts.Count)];
+
+            // display the prompt to the user
+            Program.print(displayPrompt);
+
+            // Get the users responce.
+            string userInput = Program.input();
+
+
+            EntryDataType todaysEntry = new EntryDataType(displayPrompt, 
+            userInput, today);
+
+            // save the new entry to the lists
+            datesWithEntiresExtracted.Add(today.display());
+            entriesExtracted.Add(todaysEntry.encode());
+
+            // save the modified lists to a format object
+            EntriesJson entriesJson = new EntriesJson{
+                datesWithEntires = datesWithEntiresExtracted,
+                entries = entriesExtracted
+            };
+
+            // parce the format object into a sting
+            jsonString = JsonSerializer.Serialize<EntriesJson>(entriesJson);
+
+            // save the string to a file
+            File.WriteAllText("entries.json", jsonString);
+        }
+
+    }
+
+}
+
+class viewEntries:commandClass{
+
+    private string Title = "View Entries";
+
+
+    private string Discription = "Prints all posts in order of input.";
+
+    private List<string> CommandInputs = new List<string>{
+        "old", "view", "view entries", "2"
+    };
+
+    public string displayCommandInputs(){
+        string output = "";
+        string copyData;
+
+        // format each command
+        for (int i = 0; i< CommandInputs.Count; i++){
+            copyData = $"'{CommandInputs[i]}',";
+            output = output + copyData;
+        }
+        
+        // remove the ',' from the end of teh string
+        output = output.Remove(output.Length - 1, 1);
+
+        return output;
+    }
+
+    public string getTitle(){
+        return Title;
+    }
+
+    public string getDiscription(){
+        return Discription;
+    }
+
+    public List<string> getCommandInputs(){
+        return CommandInputs;
+    }
+
+    public void run(){
+        // read the contance of the file to a string.
+        string jsonString = File.ReadAllText(@"entries.json");
+
+        // parce the string into the format object
+        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
+
+        // get the data from the format object in a form we can easily read.
+        List<EntryDataType> entryList = new List<EntryDataType>();
+        List<string> entriesExtracted = getEntries.entries;
+
+        // check to make sure there are entreis to read
+        if (entriesExtracted == null){
+            Program.print("there are no posts");
+        }
+        else{
+            // for each item add the data to a new entryDataType object and display
+            // and display it to the user.
+            for (int i = 0; i < entriesExtracted.Count; i++){
+                entryList.Add(new EntryDataType());
+
+                entryList[i].decode(getEntries.entries[i]);
+
+                Program.print();
+                Program.print(entryList[i].display());
+                
+            }
+        }
+    }
+
+}
+
+class newPrompt:commandClass{
+    
+    private string Title = "New Prompt";
+
+    private string Discription = "allows the user to add a new Journal prompt.";
+
+    private List<string> CommandInputs = new List<string>{
+        "new prompt", "4"
+    };
+
+    public string displayCommandInputs(){
+        string output = "";
+        string copyData;
+
+        // format each command
+        for (int i = 0; i< CommandInputs.Count; i++){
+            copyData = $"'{CommandInputs[i]}',";
+            output = output + copyData;
+        }
+        
+        // remove the ',' from the end of teh string
+        output = output.Remove(output.Length - 1, 1);
+
+        return output;
+    }
+
+    public string getTitle(){
+        return Title;
+    }
+
+    public string getDiscription(){
+        return Discription;
+    }
+
+    public List<string> getCommandInputs(){
+        return CommandInputs;
+    }
+
+    public void run(){
+        // read the contance of the file to a string.
+        string jsonString = File.ReadAllText(@"prompts.json");
+
+        // parce the string into the format object
+        promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(jsonString)!;
+
+        // get the data from the format object in a form we can easily read.
+        List<string> promptList = getPrompts.prompts;
+
+        string newPrompt = Program.input("Input the new prompt: ");
+
+        promptList.Add(newPrompt);
+
+        // save the modified list to a new instance of the format object
+        promptJson savePrompts = new promptJson{
+            prompts = promptList
+        };
+
+        // parce the object into a json string
+        jsonString = JsonSerializer.Serialize<promptJson>(savePrompts);
+
+        // save the parced string to a file.
+        File.WriteAllText(@"prompts.json", jsonString);
+    }
+
+}
+
+class wipeEntries:commandClass{
+
+    private string Title = "Wipe Entries";
+
+
+    private string Discription = "deletes all journal entreies. IMPOSIPLE TO REVERCE.";
+
+    private List<string> CommandInputs = new List<string>{
+        "wipe entries"
+    };
+
+    public string displayCommandInputs(){
+        string output = "";
+        string copyData;
+
+        // format each command
+        for (int i = 0; i< CommandInputs.Count; i++){
+            copyData = $"'{CommandInputs[i]}',";
+            output = output + copyData;
+        }
+        
+        // remove the ',' from the end of teh string
+        output = output.Remove(output.Length - 1, 1);
+
+        return output;
+    }
+
+    public string getTitle(){
+        return Title;
+    }
+
+    public string getDiscription(){
+        return Discription;
+    }
+
+    public List<string> getCommandInputs(){
+        return CommandInputs;
+    }
+
+    public void run(){
+         EntriesJson blankEntries = new EntriesJson();
+
+        string jsonString = JsonSerializer.Serialize<EntriesJson>(blankEntries);
+        
+        File.WriteAllText(@"entries.json", jsonString);
+
+        Program.print("All entreis wiped.");
+    }
+
+}
