@@ -3,8 +3,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Globalization;
 
+// main class, runs when you run the project.
 class Program{
 
+
+    //create function objects
     private static newEntry newEntryTemp = new newEntry();
 
     private static viewEntries viewEntriesTemp = new viewEntries();
@@ -19,42 +22,73 @@ class Program{
 
     static void Main(string[] args){
 
-        
+         print($"\n== Welcome to Journal.cs ==\n");
+
+        // keep the program running until the user tells it to stop.
         while (running == true){
             
+            string userInput = "";
 
-            print($"\n== Welcome to Journal.cs ==\n");
-
-            string userInput;
-
-            //create a dict with valid commands and there outcomes
-            List<commandClass> commandObjects = new List<commandClass>{
+            //create a list with used fucntion objects
+            List<functionClass> commandObjects = new List<functionClass>{
                 newEntryTemp, viewEntriesTemp, quitTemp, newPromptTemp, wipeTemp
             };
 
-            Dictionary<string, commandClass> registeredCommands = new Dictionary<string, commandClass>();
+            // create a list of commands
+            List<string> validCommands = new List<string>{"help"};
 
+            // create a dictionary that stores function objects
+            Dictionary<string, functionClass> registeredFunctions = new Dictionary<string, functionClass>();
+
+            // loop though every function object
             for (int i = 0; i < commandObjects.Count; i++){
                 List<string> targetCommandList = new List<string>(
                     commandObjects[i].CommandInputs
                 );
 
+                // for every command in the fucntion add a key to the 
+                // dictionary that points to that fucntion.
+
                 for (int j = 0; j < targetCommandList.Count; j++){
-                    registeredCommands.Add(targetCommandList[j], commandObjects[i]);
+
+                    // make sure there are no duplicate commands
+                    if (validCommands.Contains(targetCommandList[j]) == false){
+                        registeredFunctions.Add(targetCommandList[j], 
+                        commandObjects[i]);
+                    }
+
+                    // if there is duplicate warn the user and stop the program.
+                    else{
+                        print(
+                            $"Duplicate command '{targetCommandList[j]}' in " + 
+                            $"registered fucntion '{commandObjects[i].Title}'."
+                        );
+                        running = false;
+                    }
                 }
             }
             
 
             // get input from the user to determin what to do.
-            userInput = input("Would you like to make a new entry, view entries or quit? (1/2/3): ");
-
-            if (userInput == "help"){
+            if (running == true){
+                userInput = input("Would you like to make a new entry, " + 
+                "view entries or quit? (1/2/3): ").ToLower();
+            }
+            
+            // if the user asked for help and the program is still running
+            // run the help function
+            if (userInput == "help" && running == true){
                 help(commandObjects);
             }
-            else{
+
+            // if the program is still running run the input command
+            else if (running == true){
                 try{
-                    registeredCommands[userInput].run();
+                    registeredFunctions[userInput].run();
                 }
+
+                // if the command is not a key in the dictionary, inform the 
+                // the user that the command they input is invalid
                 catch (KeyNotFoundException){
                     print("Invalid command. Please try agran or run 'help' to " + 
                     "a list of valid commands");
@@ -65,23 +99,30 @@ class Program{
 
         }
         
+        //tell the user the program has stoped.
         print($"Stoped. \n");
 
     }
 
-    static void help(List<commandClass> commands){
-    
-        string output = "Commands";
-
-        for (int i = 0; i < commands.Count; i++){
-            commandClass targetCommand = commands[i];
-            output = output + ($"\n{i} {targetCommand.Title}" + 
-                    $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
-                    $"\n    Discription: {targetCommand.Discription}" + 
-                    $"\n");
-        }
+    static void help(List<functionClass> commands){
         
-        print(output);
+        if (commands.Count != 0){
+
+            string output = "Commands";
+
+            for (int i = 0; i < commands.Count; i++){
+                functionClass targetCommand = commands[i];
+                output = output + ($"\n{i} {targetCommand.Title}" + 
+                        $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
+                        $"\n    Discription: {targetCommand.Discription}" + 
+                        $"\n");
+            }
+            
+            print(output);
+        }
+        else{
+            print("No registered commands");
+        }
     }
 
     static string cmdListDisplay(List<string> cmdList){
@@ -119,7 +160,7 @@ class Program{
 }
 
 // a class define the structure of prompt.json
-class promptJson{
+class PromptJson{
     public List<string> prompts { get; set; }
 }
 
@@ -492,9 +533,8 @@ class myError{
 }
 
 
-
 // command class framework
-abstract class commandClass{
+abstract class functionClass{
 
     public abstract string Title{
         get;
@@ -532,7 +572,7 @@ abstract class commandClass{
 }
 
 //defalut commands
-class Quit:commandClass{
+class Quit:functionClass{
 
 
     public override string Title{
@@ -558,7 +598,7 @@ class Quit:commandClass{
 }
 
 //custom commands
-class newEntry:commandClass{
+class newEntry:functionClass{
 
 
     public override string Title{
@@ -571,6 +611,7 @@ class newEntry:commandClass{
         protected set;
     } = "Offers the user a prompt and lets them input.";
 
+    
     public override List<string> CommandInputs{
         get;
         protected set;
@@ -608,7 +649,7 @@ class newEntry:commandClass{
         else{
             //read the prompts into a list
             string rawPrompt =  File.ReadAllText(@"prompts.json");
-            promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(rawPrompt)!;
+            PromptJson getPrompts = JsonSerializer.Deserialize<PromptJson>(rawPrompt)!;
 
             List<string> prompts = getPrompts.prompts;
 
@@ -648,7 +689,7 @@ class newEntry:commandClass{
 
 }
 
-class viewEntries:commandClass{
+class viewEntries:functionClass{
 
     public override string Title{
         get;
@@ -700,7 +741,7 @@ class viewEntries:commandClass{
 
 }
 
-class newPrompt:commandClass{
+class newPrompt:functionClass{
     
     public override string Title{
         get;
@@ -724,7 +765,7 @@ class newPrompt:commandClass{
         string jsonString = File.ReadAllText(@"prompts.json");
 
         // parce the string into the format object
-        promptJson getPrompts = JsonSerializer.Deserialize<promptJson>(jsonString)!;
+        PromptJson getPrompts = JsonSerializer.Deserialize<PromptJson>(jsonString)!;
 
         // get the data from the format object in a form we can easily read.
         List<string> promptList = getPrompts.prompts;
@@ -734,12 +775,12 @@ class newPrompt:commandClass{
         promptList.Add(newPrompt);
 
         // save the modified list to a new instance of the format object
-        promptJson savePrompts = new promptJson{
+        PromptJson savePrompts = new PromptJson{
             prompts = promptList
         };
 
         // parce the object into a json string
-        jsonString = JsonSerializer.Serialize<promptJson>(savePrompts);
+        jsonString = JsonSerializer.Serialize<PromptJson>(savePrompts);
 
         // save the parced string to a file.
         File.WriteAllText(@"prompts.json", jsonString);
@@ -747,7 +788,7 @@ class newPrompt:commandClass{
 
 }
 
-class wipeEntries:commandClass{
+class wipeEntries:functionClass{
 
     public override string Title{
         get;
