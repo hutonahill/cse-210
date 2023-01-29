@@ -1,3 +1,5 @@
+// Author, Evan Riker
+
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,7 +20,19 @@ class Program{
 
     private static Quit quitTemp = new Quit();
 
+    private static removeEntry removeEntryTemp = new removeEntry();
+
     public static bool running = true;
+
+    public static string entryPath{
+        get;
+        private set;
+    } = @"entries.json";
+
+    public static string promptsPath{
+        get;
+        private set;
+    } = @"prompts.json";
 
     static void Main(string[] args){
 
@@ -31,7 +45,8 @@ class Program{
 
             //create a list with used fucntion objects
             List<functionClass> commandObjects = new List<functionClass>{
-                newEntryTemp, viewEntriesTemp, quitTemp, newPromptTemp, wipeTemp
+                newEntryTemp, viewEntriesTemp, quitTemp, newPromptTemp, 
+                removeEntryTemp, wipeTemp
             };
 
             // create a list of commands
@@ -71,8 +86,7 @@ class Program{
 
             // get input from the user to determin what to do.
             if (running == true){
-                userInput = input("Would you like to make a new entry, " + 
-                "view entries or quit? (1/2/3): ").ToLower();
+                userInput = input("journal.cs> ").ToLower();
             }
             
             // if the user asked for help and the program is still running
@@ -104,7 +118,7 @@ class Program{
 
     }
 
-    static void help(List<functionClass> commands){
+    private static void help(List<functionClass> commands){
         
         if (commands.Count != 0){
 
@@ -112,7 +126,7 @@ class Program{
 
             for (int i = 0; i < commands.Count; i++){
                 functionClass targetCommand = commands[i];
-                output = output + ($"\n{i} {targetCommand.Title}" + 
+                output = output + ($"\n{i+1} {targetCommand.Title}" + 
                         $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
                         $"\n    Discription: {targetCommand.Discription}" + 
                         $"\n");
@@ -125,22 +139,51 @@ class Program{
         }
     }
 
-    static string cmdListDisplay(List<string> cmdList){
-        string output = "";
-        string copyData;
+    public static EntriesJson loadEntries(){
 
-        // format each command
-        for (int i = 0; i< cmdList.Count; i++){
-            copyData = $"'{cmdList[i]}',";
-            output = output + copyData;
-        }
-        
-        // remove the ',' from the end of teh string
-        output = output.Remove(output.Length - 1, 1);
+        string jsonString = File.ReadAllText(Program.entryPath);
+        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
 
-        return output;
+        return getEntries;
     }
 
+    public static void saveEntries(List<string> datesWithEntires, 
+        List<string> codedEntreis){
+        EntriesJson entriesJson = new EntriesJson{
+            datesWithEntires = datesWithEntires,
+            encodedEntries = codedEntreis
+        };
+
+        // parce the format object into a sting
+        string jsonString = JsonSerializer.Serialize<EntriesJson>(entriesJson);
+
+        // save the string to a file
+        File.WriteAllText(Program.entryPath, jsonString);
+    }
+
+    public static PromptJson loadPrompts(){
+        string rawPrompt =  File.ReadAllText(Program.promptsPath);
+        PromptJson getPrompts = JsonSerializer.Deserialize<PromptJson>(rawPrompt)!;
+
+        return getPrompts;
+    }
+
+    public static void savePrompts(List<string> promptList){
+        PromptJson savePrompts = new PromptJson{
+            prompts = promptList
+        };
+
+        // parce the object into a json string
+        string jsonString = JsonSerializer.Serialize<PromptJson>(savePrompts);
+
+        // save the parced string to a file.
+        File.WriteAllText(Program.promptsPath, jsonString);
+    }
+
+
+    // input and output functions.
+    // this allows the input and output of the program to be flexable
+    // allowing me to more easily divert output to a website or other form of UI.
     public static void print(string msg){
         Console.WriteLine(msg);
     }
@@ -167,15 +210,24 @@ class PromptJson{
 // a class to define the structure of entries.json
 class EntriesJson{
     public List<string> datesWithEntires { get; set; }
-    public List<string> entries { get; set; }
+    public List<string> encodedEntries { get; set; }
 }
 
 class EntryDataType{
     
-    private string prompt;
-    private string responce;
+    public string prompt{
+        get;
+        private set;
+    } = "";
+    public string responce{
+        get;
+        private set;
+    } = "";
 
-    private DateDataType date;
+    public DateDataType date{
+        get;
+        private set;
+    } = new DateDataType();
 
     public EntryDataType(){
 
@@ -212,20 +264,6 @@ class EntryDataType{
         }
 
         return validInput;
-    }
-
-    // Getters
-
-    public string getPrompt(){
-        return prompt;
-    }
-
-    public string getResponce(){
-        return responce;
-    }
-
-    public DateDataType GetDateDataType(){
-        return date;
     }
 
     // fucntions
@@ -265,9 +303,31 @@ class EntryDataType{
 
 class DateDataType{
     // set variables to -1 by default
-    private int day = -1;
-    private int month = -1;
-    private int year = -1;
+    public int day{
+        get;
+        private set;
+    } = -1;
+
+    public int month{
+        get;
+        private set;
+    } = -1;
+
+    public int year{
+        get;
+        private set;
+    } = -1;
+
+    public bool validDate{
+        get;
+        private set;
+    } = true;
+
+    public string errorMsg{
+        get;
+        private set;
+    } = "";
+    
 
     private bool isLeapYear;
 
@@ -295,15 +355,18 @@ class DateDataType{
                     day = dayValue;
                 }
                 else{
-                    throw new ArgumentException(dayError.readMsg());
+                    validDate = false;
+                    errorMsg = dayError.readMsg();
                 }
             }
             else{
-                throw new ArgumentException(monthError.readMsg());
+                validDate = false;
+                errorMsg = monthError.readMsg();
             }
         }
         else{
-            throw new ArgumentException(yearError.readMsg());
+            validDate = false;
+            errorMsg = yearError.readMsg();
         }
 
         
@@ -479,19 +542,6 @@ class DateDataType{
         }
     }
 
-    // Getters
-    public int getDay(){
-        return day;
-    }
-
-    public int getMonth(){
-        return month;
-    }
-
-    public int getYear(){
-        return year;
-    }
-
     // Functions
     public string display(){
         return($"{month}/{day}/{year}");
@@ -532,6 +582,7 @@ class myError{
     }
 }
 
+// Author: Riker, Evan
 
 // command class framework
 abstract class functionClass{
@@ -622,12 +673,11 @@ class newEntry:functionClass{
     public override void run(){
 
         // read a list of dates with posts and the posts
-        string jsonString = File.ReadAllText(@"entries.json");
-        EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
+        EntriesJson getEntries = Program.loadEntries();
 
         List<string> datesWithEntiresExtracted = getEntries.datesWithEntires;
 
-        List<string> entriesExtracted = getEntries.entries;
+        List<string> entriesExtracted = getEntries.encodedEntries;
 
         // get the date and put it into a date object
         DateTime whatsToday = DateTime.Now;
@@ -648,8 +698,7 @@ class newEntry:functionClass{
 
         else{
             //read the prompts into a list
-            string rawPrompt =  File.ReadAllText(@"prompts.json");
-            PromptJson getPrompts = JsonSerializer.Deserialize<PromptJson>(rawPrompt)!;
+            PromptJson getPrompts = Program.loadPrompts();
 
             List<string> prompts = getPrompts.prompts;
 
@@ -673,16 +722,7 @@ class newEntry:functionClass{
             entriesExtracted.Add(todaysEntry.encode());
 
             // save the modified lists to a format object
-            EntriesJson entriesJson = new EntriesJson{
-                datesWithEntires = datesWithEntiresExtracted,
-                entries = entriesExtracted
-            };
-
-            // parce the format object into a sting
-            jsonString = JsonSerializer.Serialize<EntriesJson>(entriesJson);
-
-            // save the string to a file
-            File.WriteAllText("entries.json", jsonString);
+            Program.saveEntries(datesWithEntiresExtracted, entriesExtracted);
         }
 
     }
@@ -711,14 +751,13 @@ class viewEntries:functionClass{
 
     public override void run(){
         // read the contance of the file to a string.
-        string jsonString = File.ReadAllText(@"entries.json");
-
+        string jsonString = File.ReadAllText(Program.entryPath);
         // parce the string into the format object
         EntriesJson getEntries = JsonSerializer.Deserialize<EntriesJson>(jsonString)!;
 
         // get the data from the format object in a form we can easily read.
         List<EntryDataType> entryList = new List<EntryDataType>();
-        List<string> entriesExtracted = getEntries.entries;
+        List<string> entriesExtracted = getEntries.encodedEntries;
 
         // check to make sure there are entreis to read
         if (entriesExtracted == null){
@@ -730,7 +769,7 @@ class viewEntries:functionClass{
             for (int i = 0; i < entriesExtracted.Count; i++){
                 entryList.Add(new EntryDataType());
 
-                entryList[i].decode(getEntries.entries[i]);
+                entryList[i].decode(getEntries.encodedEntries[i]);
 
                 Program.print();
                 Program.print(entryList[i].display());
@@ -761,11 +800,9 @@ class newPrompt:functionClass{
     };
 
     public override void run(){
-        // read the contance of the file to a string.
-        string jsonString = File.ReadAllText(@"prompts.json");
 
-        // parce the string into the format object
-        PromptJson getPrompts = JsonSerializer.Deserialize<PromptJson>(jsonString)!;
+
+        PromptJson getPrompts = Program.loadPrompts();
 
         // get the data from the format object in a form we can easily read.
         List<string> promptList = getPrompts.prompts;
@@ -775,15 +812,7 @@ class newPrompt:functionClass{
         promptList.Add(newPrompt);
 
         // save the modified list to a new instance of the format object
-        PromptJson savePrompts = new PromptJson{
-            prompts = promptList
-        };
-
-        // parce the object into a json string
-        jsonString = JsonSerializer.Serialize<PromptJson>(savePrompts);
-
-        // save the parced string to a file.
-        File.WriteAllText(@"prompts.json", jsonString);
+        Program.savePrompts(promptList);
     }
 
 }
@@ -809,13 +838,162 @@ class wipeEntries:functionClass{
     };
 
     public override void run(){
-         EntriesJson blankEntries = new EntriesJson();
-
-        string jsonString = JsonSerializer.Serialize<EntriesJson>(blankEntries);
-        
-        File.WriteAllText(@"entries.json", jsonString);
+        Program.saveEntries(null, null);
 
         Program.print("All entreis wiped.");
     }
 
 }
+
+
+class removeEntry:functionClass{
+    public override string Title{
+        get;
+        protected set;
+    } = "Remove Entry";
+
+    public override string Discription{
+        get;
+        protected set;
+    } = "Removes a spesific entry by date";
+
+    public override List<string> CommandInputs{
+        get;
+        protected set;
+    } = new List<string>{
+        "remove", "remove entry", "5"
+    };
+
+    public override void run(){
+
+        DateDataType inputDate = getDate();
+
+        if (inputDate.validDate == false){
+            throw new Exception($"Date invalid. Check getDate function.");
+        }
+
+        EntriesJson entryJson = Program.loadEntries();
+
+        List<string> dateList = entryJson.datesWithEntires;
+        List<string> entryList = entryJson.encodedEntries;
+
+        if (dateList.Contains(inputDate.display()) == false){
+            Program.print("There is no entry with that date.");
+        }
+        else{
+            int index = dateList.IndexOf(inputDate.display());
+
+            dateList.RemoveAt(index);
+            entryList.RemoveAt(index);
+
+            Program.saveEntries(dateList,entryList);
+
+            Program.print("entry removed");
+        }
+
+
+
+    }
+
+    private DateDataType getDate(){
+        bool validDate = false;
+        DateDataType inputDate = new DateDataType();
+
+        while (validDate == false){
+            string userInput = Program.input(
+                "Input a date in the format MM/DD/YYYY: "
+            );
+
+            // check that the /s are in the right places
+            string char2 = char.ToString(userInput[2]);
+            string char5 = char.ToString(userInput[5]);
+
+            if ((char2.Equals("/") == false) || (char5.Equals("/") == false)){
+                
+                validDate = false;
+                Program.print("You must input a date in the format MM/DD/YYYY. " + 
+                $"charicters 3 and 6 must be '/'. you input them as " + 
+                $"'{userInput[2]}' and '{userInput[5]}'. Please Try again.\n");
+            }
+            else{
+                string[] splitInput = userInput.Split("/");
+
+                // check that there were only 3 slashes
+                if (splitInput.Length != 3){
+                    validDate = false;
+                    Program.print("You must input a date in the format MM/DD/YYYY. " + 
+                    $" As such there must be 2 '/' charicters. You input " + 
+                    $"{splitInput.Length-1}. Please try again.\n");
+                }
+                else {
+                    string splitMonth = splitInput[0];
+                    int month;
+
+                    string splitDay = splitInput[1];
+                    int day;
+
+                    string splitYear = splitInput[2];
+                    int year;
+
+                    // check the length of each value
+                    if (splitMonth.Length != 2){
+                        validDate = false;
+                        Program.print("You must input a date in the format MM/DD/YYYY. " + 
+                        $" As such there the month values must consist of 2 charicters. You input " + 
+                        $"{splitMonth.Length}. Please try again.\n");
+                    }
+
+                    else if (splitDay.Length != 2){
+                        validDate = false;
+                        Program.print("You must input a date in the format MM/DD/YYYY. " + 
+                        $" As such there the day values must consist of 2 charicters. You input " + 
+                        $"{splitDay.Length}. Please try again.\n");
+                    }
+                    else if (splitYear.Length != 4){
+                        validDate = false;
+                        Program.print("You must input a date in the format MM/DD/YYYY. " + 
+                        $" As such there the year values must consist of 4 charicters. You input " + 
+                        $"{splitYear.Length}. Please try again.\n");
+                    }
+
+                    // chec that each value can be parced to an int.
+                    else if (int.TryParse(splitMonth, out month) == false){
+                        validDate = false;
+                        Program.print("The month value must be a number. " + 
+                        "Please try again.\n");
+                    }
+                    else if(int.TryParse(splitDay, out day) == false){
+                        validDate = false;
+                        Program.print("The day value must be a number. " + 
+                        "Please try again.\n");
+                    }
+                    else if(int.TryParse(splitYear, out year) == false){
+                        validDate = false;
+                        Program.print("The year value must be a number. " + 
+                        "Please try again.\n");
+                    }
+                    else{
+                        inputDate = new DateDataType(
+                            day, month, year
+                        );
+
+                        if (inputDate.validDate == false){
+                            Program.print(inputDate.errorMsg + $"\n");
+                        }
+                        else{
+                            validDate = true;
+                        }
+                    }
+                }
+
+                
+            }
+
+        }
+        // END WHILE LOOP
+
+        return inputDate;
+    }
+}
+
+// Author: Evan Riker
