@@ -36,54 +36,61 @@ class Program{
 
     static void Main(string[] args){
 
-         print($"\n== Welcome to Journal.cs ==\n");
+        print($"\n== Welcome to Journal.cs ==\n");
 
+        
+        // set up command framework
+
+        //create a list with used fucntion objects
+        List<functionClass> commandObjects = new List<functionClass>{
+            newEntryTemp, viewEntriesTemp, quitTemp, newPromptTemp, 
+            removeEntryTemp, wipeTemp
+        };
+
+        // create a list of commands
+        List<string> validCommands = new List<string>{"help"};
+
+        // create a dictionary that stores function objects
+        Dictionary<string, functionClass> registeredFunctions = new Dictionary<string, functionClass>();
+
+        // loop though every function object
+        for (int i = 0; i < commandObjects.Count; i++){
+            List<string> targetCommandList = new List<string>(
+                commandObjects[i].CommandInputs
+            );
+
+            // for every command in the fucntion add a key to the 
+            // dictionary that points to that fucntion.
+
+            for (int j = 0; j < targetCommandList.Count; j++){
+
+                // make sure there are no duplicate commands
+                if (validCommands.Contains(targetCommandList[j]) == false){
+                    
+                    // if the command is not a duplicate, add the command
+                    // and corisponding funciton to the dictionary
+                    registeredFunctions.Add(targetCommandList[j], 
+                    commandObjects[i]);
+
+                    // add teh command to the list of valid commands
+                    validCommands.Add(targetCommandList[j]);
+                }
+
+                // if there is duplicate warn the user and stop the program.
+                else{
+                    print(
+                        $"Duplicate command '{targetCommandList[j]}' in " + 
+                        $"registered fucntion '{commandObjects[i].Title}'."
+                    );
+                    running = false;
+                }
+            }
+        }
+        
         // keep the program running until the user tells it to stop.
         while (running == true){
             
             string userInput = "";
-
-            //create a list with used fucntion objects
-            List<functionClass> commandObjects = new List<functionClass>{
-                newEntryTemp, viewEntriesTemp, quitTemp, newPromptTemp, 
-                removeEntryTemp, wipeTemp
-            };
-
-            // create a list of commands
-            List<string> validCommands = new List<string>{"help"};
-
-            // create a dictionary that stores function objects
-            Dictionary<string, functionClass> registeredFunctions = new Dictionary<string, functionClass>();
-
-            // loop though every function object
-            for (int i = 0; i < commandObjects.Count; i++){
-                List<string> targetCommandList = new List<string>(
-                    commandObjects[i].CommandInputs
-                );
-
-                // for every command in the fucntion add a key to the 
-                // dictionary that points to that fucntion.
-
-                for (int j = 0; j < targetCommandList.Count; j++){
-
-                    // make sure there are no duplicate commands
-                    if (validCommands.Contains(targetCommandList[j]) == false){
-                        registeredFunctions.Add(targetCommandList[j], 
-                        commandObjects[i]);
-                    }
-
-                    // if there is duplicate warn the user and stop the program.
-                    else{
-                        print(
-                            $"Duplicate command '{targetCommandList[j]}' in " + 
-                            $"registered fucntion '{commandObjects[i].Title}'."
-                        );
-                        running = false;
-                    }
-                }
-            }
-            
-
             // get input from the user to determin what to do.
             if (running == true){
                 userInput = input("journal.cs> ").ToLower();
@@ -844,7 +851,6 @@ class wipeEntries:functionClass{
     }
 
 }
-
 
 class removeEntry:functionClass{
     public override string Title{
