@@ -572,7 +572,6 @@ class Quit:functionClass{
         };
 
         FlagObjects = new List<flagClass>{
-            new testFlag()
         };
 
         FlagRegistry = new Dictionary<string, flagClass>();
@@ -586,25 +585,108 @@ class Quit:functionClass{
 }
 
 
-class testFlag:flagClass{
+class NewScripture:functionClass{
+    public NewScripture(){
+        Title = "New Scripture";
+        
+        Discription = "Adds a new scriptrue to the programs database.";
 
-    public testFlag(){
-        Title = "Testing Flag";
-        Discription = "Makes sure the flag system is working properly";
-        Flags = new List<string>{
-            "-t", "test", "t"
+        CommandInputs = new List<string>{
+            "new", "newScripture", "ns"
         };
-        Paramiters = "string peram - sting to output";
-    }
-    
 
-    public override void run(string peramiter){
-        if (peramiter == ""){
-            Program.print($"{Title} requires a peramiter");
+        FlagObjects = new List<flagClass>();
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+
+    protected override void runNoFlag(){
+        string refInput = Program.input(
+            "Input the verse refrance (such as John 3:16): "
+        );
+
+        Dictionary<string, string> scriptureDict = Program.loadScriptures();
+
+        if (scriptureDict.ContainsKey(refInput)){
+            Program.print($"The verse {refInput} is already registered");
         }
         else{
-            Program.print(peramiter);
+            string verseInput = Program.input(
+                "Input the verse with no numbers, in one line: "
+            );
+
+            scriptureDict[refInput] = verseInput;
+
+            Program.saveScriptures(scriptureDict);
+        }
+
+    }
+}
+
+class overwrite:flagClass{
+    public overwrite(){
+        Title = "Overwrite";
+        Discription = "allows you to overwrite a verce";
+        Flags = new List<string>{
+            "-o", "overwrite", "o"
+        };
+        Paramiters = "";
+    }
+
+    public override void run(string peramiter){
+        if (peramiter != ""){
+            Program.print($"The '{Title}' flag does not accept any paramiters.");
+        }
+
+        else{
+            string refInput = Program.input(
+                "Input the verse refrance (such as John 3:16): "
+            );
+
+            Dictionary<string, string> scriptureDict = Program.loadScriptures();
+
+            string verseInput = Program.input(
+                "Input the verse with no numbers, in one line: "
+            );
+
+            scriptureDict[refInput] = verseInput;
+
+            Program.saveScriptures(scriptureDict);
+            
         }
     }
 }
+
+class refrance:flagClass{
+    public refrance(){
+        Title = "Refrance";
+        Discription = "allows you to pass the refrance in the command";
+        Flags = new List<string>{
+            "-o", "overwrite", "o"
+        };
+        Paramiters = "ref - the refrance to the verce (such as John 3:16)";
+    }
+
+    public override void run(string peramiter){
+        string refInput = peramiter;
+        
+        Dictionary<string, string> scriptureDict = Program.loadScriptures();
+
+        if (scriptureDict.ContainsKey(refInput)){
+            Program.print($"The verse {refInput} is already registered");
+        }
+        else{
+            string verseInput = Program.input(
+                "Input the verse with no numbers, in one line: "
+            );
+
+            scriptureDict[refInput] = verseInput;
+
+            Program.saveScriptures(scriptureDict);
+        }
+    }
+}
+
 
