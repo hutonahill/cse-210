@@ -23,7 +23,8 @@ class Program{
         running = true;
 
         functionObjects = new List<functionClass>{
-            new Quit()
+            new Quit(), new StartTest(), new Display(), 
+            new Delete(), new NewScripture()
         };
         
         // set up the command framework
@@ -187,10 +188,17 @@ class Program{
     public static Dictionary<string, string> loadScriptures(){
         if (File.Exists(scriptrurePath) == true){
             string jsonString = File.ReadAllText(Program.scriptrurePath);
-            ScriptureJson ScriptureJson = 
-            JsonSerializer.Deserialize<ScriptureJson>(jsonString)!;
 
-            return ScriptureJson.dict;
+            if (jsonString != ""){
+                ScriptureJson ScriptureJson =
+                JsonSerializer.Deserialize<ScriptureJson>(jsonString)!;
+
+                return ScriptureJson.dict;
+            }
+            else{
+                return new Dictionary<string, string>();
+            }
+            
         }
         else{
             File.Create(scriptrurePath);
@@ -231,7 +239,9 @@ class Program{
         
     }
 
-
+    public static void clear(){
+        Console.Clear();
+    }
 }
 
 // Data Types
@@ -271,7 +281,6 @@ class myError{
 /// Abstract Class <c>functionClass</c> the structure of functions.
 /// </summary>
 public abstract class functionClass{
-
 
     public string Title{
         get;
@@ -525,6 +534,7 @@ public abstract class functionClass{
 
 }
 
+
 /// <summary>
 /// Abstract Class <c>flagClass</c> the structure of flags for functions.
 /// </summary>
@@ -585,6 +595,10 @@ class Quit:functionClass{
 }
 
 
+// new scripture 
+/// <summary>
+/// Function Class <c>NewScripture</c> allows the user to add a new scripture.
+/// </summary>
 class NewScripture:functionClass{
     public NewScripture(){
         Title = "New Scripture";
@@ -595,7 +609,9 @@ class NewScripture:functionClass{
             "new", "newScripture", "ns"
         };
 
-        FlagObjects = new List<flagClass>();
+        FlagObjects = new List<flagClass>{
+            new overwrite()
+        };
 
         FlagRegistry = new Dictionary<string, flagClass>();
 
@@ -612,6 +628,10 @@ class NewScripture:functionClass{
         if (scriptureDict.ContainsKey(refInput)){
             Program.print($"The verse {refInput} is already registered");
         }
+        else if((refInput.ToLower() == "help") || (refInput.ToLower() == "back")){
+            Program.print("you cannot store a scripture with the refrance " +
+            "'help' or 'back");
+        }
         else{
             string verseInput = Program.input(
                 "Input the verse with no numbers, in one line: "
@@ -625,6 +645,9 @@ class NewScripture:functionClass{
     }
 }
 
+/// <summary>
+/// Flag Class <c>overwrite</c> allows the users new scripture to overwrite an old function.
+/// </summary>
 class overwrite:flagClass{
     public overwrite(){
         Title = "Overwrite";
@@ -645,26 +668,37 @@ class overwrite:flagClass{
                 "Input the verse refrance (such as John 3:16): "
             );
 
-            Dictionary<string, string> scriptureDict = Program.loadScriptures();
+            if((refInput.ToLower() == "help") || (refInput.ToLower() == "back")){
+                Program.print("you cannot store a scripture with the refrance " +
+                "'help' or 'back");
+            }
+            else{
+                Dictionary<string, string> scriptureDict = Program.loadScriptures();
 
-            string verseInput = Program.input(
-                "Input the verse with no numbers, in one line: "
-            );
+                string verseInput = Program.input(
+                    "Input the verse with no numbers, in one line: "
+                );
 
-            scriptureDict[refInput] = verseInput;
+                scriptureDict[refInput] = verseInput;
 
-            Program.saveScriptures(scriptureDict);
+                Program.saveScriptures(scriptureDict);
+            }
+
             
         }
     }
 }
 
-class refrance:flagClass{
-    public refrance(){
+/// <summary>
+/// Flag Class <c>refrance</c> allows the user to pass a refrance into the function when they run it.
+/// currently broken
+/// </summary>
+class newRefrance:flagClass{
+    public newRefrance(){
         Title = "Refrance";
         Discription = "allows you to pass the refrance in the command";
         Flags = new List<string>{
-            "-o", "overwrite", "o"
+            "-r", "refrance", "r"
         };
         Paramiters = "ref - the refrance to the verce (such as John 3:16)";
     }
@@ -676,6 +710,10 @@ class refrance:flagClass{
 
         if (scriptureDict.ContainsKey(refInput)){
             Program.print($"The verse {refInput} is already registered");
+        }
+        else if((refInput.ToLower() == "help") || (refInput.ToLower() == "back")){
+            Program.print("you cannot store a scripture with the refrance " +
+            "'help' or 'back");
         }
         else{
             string verseInput = Program.input(
@@ -689,4 +727,520 @@ class refrance:flagClass{
     }
 }
 
+
+// delete scriptures
+/// <summary>
+/// Function Class <c>Delete</c> allows the user to delete a scripture
+/// </summary>
+class Delete:functionClass{
+    public Delete(){
+        Title = "Delete Scripture";
+
+        Discription = "Deletes a scripture";
+
+        CommandInputs = new List<string>{
+            "del", "delete", "ds"
+        };
+
+        FlagObjects = new List<flagClass>{
+        };
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+
+    protected override void runNoFlag(){
+        bool validInput = false;
+        
+        while (validInput == false){
+            string userInput = Program.input("Input the verse refrance to delete: ");
+
+            Dictionary<string, string> dict = Program.loadScriptures();
+
+            
+            if (userInput.ToLower() == "back"){
+                validInput = true;
+            }
+
+            else if (userInput.ToLower() == "help"){
+                Program.print("Stored scriptures: ");
+                
+                string output = "";
+                
+                foreach (string s in dict.Keys){
+                    output = output + $"'{s}', ";
+                }
+                
+                //remove the last two chariters
+                output = output.Remove(output.Length - 2, 2);
+
+                Program.print(output);
+                validInput = false;
+            }
+
+            else if (dict.ContainsKey(userInput) == false){
+                Program.print("No scriputre with that refrance");
+                validInput = false;
+            }
+
+            else{
+                dict.Remove(userInput);
+                Program.print("Scriputre deleted.");
+                validInput = true;
+            }
+
+            Program.saveScriptures(dict);
+        }//while
+        
+    }
+}
+
+/// <summary>
+/// Flag Class <c>refrance</c> allows the user to pass a refrance into the function when they run it.
+/// currently broken
+/// </summary>
+class delRefrance:flagClass{
+    public delRefrance(){
+        Title = "Refrance";
+        Discription = "allows you to pass the refrance in the command";
+        Flags = new List<string>{
+            "-r", "refrance", "r"
+        };
+        Paramiters = "ref - the refrance to the verce (such as John 3:16)";
+    }
+
+    public override void run(string peramiter){
+        
+        string userInput = peramiter;
+
+        Dictionary<string, string> dict = Program.loadScriptures();
+
+        if (userInput.ToLower() == "help"){
+            Program.print("Stored scriptures: ");
+            
+            string output = "";
+            
+            foreach (string s in dict.Keys){
+                output = output + $"'{s}', ";
+            }
+            
+            //remove the last two chariters
+            output = output.Remove(output.Length - 2, 2);
+
+            Program.print(output);
+        }
+
+        else if (dict.ContainsKey(userInput) == false){
+            Program.print("No scriputre with that refrance");
+        }
+
+        else{
+            dict.Remove(userInput);
+            Program.print("Scriputre deleted.");
+        }
+
+        Program.saveScriptures(dict);
+        
+    }
+}
+
+
+// display scriptures
+/// <summary>
+/// Function Class <c>Display</c> displays a scriptur to the user.
+/// </summary>
+class Display:functionClass{
+    public Display(){
+        Title = "Dsiplay  Scripture";
+
+        Discription = "Displays a full scripture to the user";
+
+        CommandInputs = new List<string>{
+            "dis", "display"
+        };
+
+        FlagObjects = new List<flagClass>{
+        };
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+
+    protected override void runNoFlag(){
+        bool validInput = false;
+        
+        while (validInput == false){
+            string userInput = Program.input("Input the verse refrance to display: ");
+
+            Dictionary<string, string> dict = Program.loadScriptures();
+
+            
+            if (userInput.ToLower() == "back"){
+                validInput = true;
+            }
+
+            else if (userInput.ToLower() == "help"){
+                Program.print("Stored scriptures: ");
+                
+                string output = "";
+                
+                foreach (string s in dict.Keys){
+                    output = output + $"'{s}', ";
+                }
+                
+                //remove the last two chariters
+                output = output.Remove(output.Length - 2, 2);
+
+                Program.print(output);
+                validInput = false;
+            }
+
+            else if (dict.ContainsKey(userInput) == false){
+                Program.print("No scriputre with that refrance");
+                validInput = false;
+            }
+
+            else{
+                Program.print();
+                Program.print(dict[userInput]);
+                validInput = true;
+            }
+
+
+        }//while
+    }
+}
+
+/// <summary>
+/// Flag Class <c>refrance</c> allows the user to pass a refrance into the function when they run it.
+/// currently broken
+/// </summary>
+class disRefrance:flagClass{
+   
+    public disRefrance(){
+        Title = "Refrance";
+        Discription = "allows you to pass the refrance in the command";
+        Flags = new List<string>{
+            "-r", "refrance", "r"
+        };
+        Paramiters = "ref - the refrance to the verce (such as John 3:16)";
+    }
+
+    public override void run(string peramiter){
+        string userInput = peramiter;
+
+        Dictionary<string, string> dict = Program.loadScriptures();
+
+        
+        if (userInput.ToLower() == "help"){
+            Program.print("Stored scriptures: ");
+            
+            string output = "";
+            
+            foreach (string s in dict.Keys){
+                output = output + $"'{s}', ";
+            }
+            
+            //remove the last two chariters
+            output = output.Remove(output.Length - 2, 2);
+
+            Program.print(output);
+        }
+
+        else if (dict.ContainsKey(userInput) == false){
+            Program.print("No scriputre with that refrance");
+        }
+
+        else{
+            Program.print(dict[userInput]);
+        }
+    }
+}
+
+
+// start test
+/// <summary>
+/// Fucntion Class <c>StartTest</c> tests the user, this is the the primary funciton that contains the requiremtns
+/// </summary>
+class StartTest:functionClass{
+    public StartTest(){
+        Title = "Start Test";
+
+        Discription = "Tests the users memorization of the scriputre";
+
+        CommandInputs = new List<string>{
+            "start", "test", "starttest"
+        };
+
+        FlagObjects = new List<flagClass>{
+            new dificulty()
+        };
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+
+    protected override void runNoFlag(){
+        string scripture = getScriputreInline();
+
+        if (scripture != "back"){
+            runTest(scripture, 5);
+        }
+        
+    }
+
+    public void runTest(string scripture, int removalsPerIteration){
+        
+        // split the scripture into a list
+        List<string> splitScript = scripture.Split(" ").ToList();
+        List<int> visibleIndexes = new List<int>();
+
+        Random random = new Random();
+
+        for (int i = 0; i < splitScript.Count; i++){
+            visibleIndexes.Add(i);
+        }
+
+        bool end = false;
+
+        int lvl = 0;
+
+        Program.clear();
+        Program.print($"Level {lvl}:");
+        displayScript(splitScript);
+
+        while (end == false){
+
+            // display the scripture to the user
+            
+
+            string userInput = Program.input("scriptureTest.cs/StartTest> ").ToLower();
+
+            if (userInput == "back"){
+                end = true;
+            }
+
+            else if (userInput == "help"){
+                Program.print("Input '' to advnace to the next stage.");
+                Program.print("Input 'back' to leave the test.");
+            }
+
+            else{
+
+                // remove a number of words equil to removalsPerIteration
+                for (int i = 0; i < removalsPerIteration; i++){
+                    if (visibleIndexes.Count > 0 ){
+                        // get a random index from the list of indexes of visible words
+                        int removeValueIndex = random.Next(visibleIndexes.Count);
+
+                        // conver the visibleIndexes index to a splitScript index
+                        int removeValue = visibleIndexes[removeValueIndex];
+                        
+                        // blank the selected word
+                        splitScript[removeValue] = convertToBlank(splitScript[removeValue]);
+
+                        // remove the now blank index from the list of visible indexes.
+                        visibleIndexes.RemoveAt(removeValueIndex);
+
+                        if (visibleIndexes.Count == 0){
+                            end = true;
+                        }
+
+                        lvl = lvl + 1;
+                    }
+
+                    
+                    
+                }
+
+                Program.clear();
+                Program.print($"Level {lvl}:");
+                displayScript(splitScript);
+                
+            }
+
+            
+
+        }//while
+    }
+
+    public string getScriputreInline(){
+        bool validInput = false;
+        
+        while (validInput == false){
+            string userInput = Program.input("Input the verse refrance to display: ");
+
+            Dictionary<string, string> dict = Program.loadScriptures();
+
+            
+            if (userInput.ToLower() == "back"){
+                validInput = true;
+                return "back";
+            }
+
+            else if (userInput.ToLower() == "help"){
+                Program.print("Stored scriptures: ");
+                
+                string output = "";
+                
+                foreach (string s in dict.Keys){
+                    output = output + $"'{s}', ";
+                }
+                
+                //remove the last two chariters
+                output = output.Remove(output.Length - 2, 2);
+
+                Program.print(output);
+                validInput = false;
+            }
+
+            else if (dict.ContainsKey(userInput) == false){
+                Program.print("No scriputre with that refrance");
+                validInput = false;
+            }
+
+            else{
+                validInput = true;
+                return dict[userInput];
+            }
+
+
+        }//while
+
+        return "ERROR";
+    }
+
+    private void displayScript(List<string> splitScript){
+        string output = "";
+
+        foreach (string s in splitScript){
+            output = output + s + " ";
+        }
+        Program.print();
+        Program.print(output);
+    }
+
+    private string convertToBlank(string visible){
+        
+        string output = "";
+        List<char> nonConverts = new List<char>{
+            '(',')', '-', ';', ',','?', '.', '&', '!','"'
+        };
+
+        for (int i = 0; i < visible.Length; i++){
+
+            if (nonConverts.Contains(visible[i]) == true){
+                output = output + visible[i];
+            }
+            else{
+                output = output + '_';
+            }
+        }
+
+        return output;
+    }
+
+}
+
+/// <summary>
+/// Flag Class <c>refrance</c> allows the user to pass a refrance into the function when they run it.
+/// currently broken
+/// </summary>
+class testRefrance:flagClass{
+    public testRefrance(){
+        Title = "Refrance";
+        Discription = "allows you to pass the refrance in the command";
+        Flags = new List<string>{
+           "-r", "refrance", "r"
+        };
+        Paramiters = "ref - the refrance to the verce (such as John 3:16)";
+    }
+
+    public override void run(string peramiter){
+
+        
+        string userInput = Program.input("Input the verse refrance to display: ");
+
+        string script = "";
+
+        Dictionary<string, string> dict = Program.loadScriptures();
+
+        
+        if (userInput.ToLower() == "back"){
+            // do nothing, leave the function
+        }
+
+        else if (userInput.ToLower() == "help"){
+            Program.print("Stored scriptures: ");
+            
+            string output = "";
+            
+            foreach (string s in dict.Keys){
+                output = output + $"'{s}', ";
+            }
+            
+            //remove the last two chariters
+            output = output.Remove(output.Length - 2, 2);
+
+            Program.print(output);
+        }
+
+        else if (dict.ContainsKey(userInput) == false){
+            Program.print("No scriputre with that refrance");
+        }
+
+        else{
+            script = dict[userInput];
+            StartTest startTest = new StartTest();
+            startTest.runTest(script, 5);
+        }
+    }
+}
+
+class dificulty:flagClass{
+    public dificulty(){
+        Title = "Dificulty";
+        Discription = "allows you to change the nber of words that are blanked every round";
+        Flags = new List<string>{
+            "-d", "dificulty", "dif"
+        };
+        Paramiters = "dif - the number of words to be removed each round";
+    }
+
+    public override void run(string peramiter){
+        if (peramiter == ""){
+            Program.print($"Flag {Title} requires a peramiter.");
+        }
+        else{
+            int dif = 0;
+
+            if (int.TryParse(peramiter, out dif) == false){
+                Program.print($"The peramiter for flag {Title} but be an intiger");
+            }
+            else if(dif <= 0){
+                Program.print("Dificulty must be greater than 0");
+            }
+            else{
+                StartTest startTest = new StartTest();
+                string scripture = startTest.getScriputreInline();
+
+                if (scripture != "back"){
+                    int words = scripture.Split("").Length;
+                    
+                    if (dif > words){
+                        Program.print("the dificulty may not excede the number of words.");
+                    }
+                    else{
+                        startTest.runTest(scripture, dif);
+                    }
+                }
+            }
+        }
+
+        
+    }
+}
 
