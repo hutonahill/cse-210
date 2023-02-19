@@ -107,6 +107,7 @@ class Program{
                     //check to make sure commands dont contains spaces.
                     int checkValue = targetCommandList[j].IndexOfAny(bannedChars);
                     if (checkValue == -1){
+                        
                         // if the command is not a duplicate add the command 
                         // and corisponding function to the dictionary
                         registeredFunctions.Add(targetCommandList[j], 
@@ -116,6 +117,9 @@ class Program{
                         validCommands.Add(targetCommandList[j]);
                     }
                     else{
+                        
+                        // inform the user which commands contain banned charicters
+                        // so the probem can be fixed.
                         print($"The command '{targetCommandList[j]}' " + 
                         $"of function '{functionObjects[i].Title}' contains a " + 
                         "banned charicter.");
