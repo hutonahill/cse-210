@@ -3,7 +3,15 @@ using System.Collections.Generic;
 
 class Porgram{
     public static void Main(){
+        
+        if (testIsOnCircle() == true){
+            if(testCheckPoints() == true){
 
+            }
+        }
+    }
+
+    public static bool testCheckPoints(){
         List<double[]> centerTestValues = new List<double[]> {
             new double[] {0.0, 0.0}, new double[] {2.0, 2.0},
             new double[] {-3.0, -3.0}, new double[] {5.0, 6.0},
@@ -65,7 +73,7 @@ class Porgram{
             else{
                 print($"    Fail.");
                 print($"    Testing Input: ");
-                print($"        centerTestValues[{i}] == {centerTestValues[i]}");
+                print($"        centerTestValues[{i}] == ({centerTestValues[i][0]}, {centerTestValues[i][0]})");
                 print($"        radiusTestValues[{i}] == {radiusTestValues[i]}");
                 int j = 0;
                 foreach (double[] da in testPoints[i]){
@@ -81,15 +89,84 @@ class Porgram{
                 print("");
                 print($"    Logs:");
                 j = 0;
-                foreach (string s in checker.log){
+                foreach (string s in checker.CheckPointsLog){
                     print($"        {j}) {s}");
                     j ++;
                 }
 
                 
                 i = centerTestValues.Count;
+                return false;
             }
         }
+
+        return true;
+    }
+
+
+    public static bool testIsOnCircle(){
+        List<double[]> centerTestValues = new List<double[]> {
+            new double[] {0.0, 0.0}, new double[] {0.0, 0.0},
+            new double[] {0.0, 0.0}, new double[] {0.0, 0.0},
+            new double[] {0.0, 0.0}
+        };
+
+        List<double> radiusTestValues = new List<double>{
+            1.0, 1.0, 1.0, 1.0, 1.0
+        };
+
+        List<double[]> testPoints = new List<double[]> {
+            new double[] {1.0, 0.0 }, new double[] {0.5, 0.5 }, 
+            new double[] {2.0, 0.0 }, new double[] {1 - 1e-4, 0.0}, 
+            new double[] {1 - 1e-2, 0.0}, 
+            
+        };
+
+        List<double> testPointTolerances = new List<double>{
+            0.001, 0.001, 0.001, 1e-3, 1e-3
+        };
+
+        List<bool> output = new List<bool>{
+            true, false, false, true, false
+        };
+
+        NinePointCircleChecker checker;
+
+        for (int i = 0; i < centerTestValues.Count; i++){
+
+            print($"Test {i+1}:");
+            checker = new NinePointCircleChecker(centerTestValues[i], radiusTestValues[i]);
+            checker.pointTolerance = testPointTolerances[i];
+
+            bool testValue = checker.IsOnCircle(testPoints[i]);
+
+            if(testValue == output [i]){
+                print("    Pass.");
+                print("");
+            }
+            else{
+                print($"    Fail");
+                print($"    TestValues:");
+                print($"        centerTestValues[{i}] == ({centerTestValues[i][0]}, {centerTestValues[i][0]})");
+                print($"        radiusTestValues [{i}] == {radiusTestValues[i]}");
+                print($"        testPoints[{i}] == ({testPoints[i][0]}, {testPoints[i][0]})");
+                print($"        testPointTolerances[{i}] == {testPointTolerances[i]}");
+                print($"        output[{i}] == {output[i]}");
+                print($"    Logs:");
+                int j = 0;
+                foreach (string s in checker.IsOnCircleLog){
+                    print($"        {j}) {s}");
+                    j ++;
+                }
+
+                i = centerTestValues.Count;
+                return false;
+            }
+        }
+
+        print($" === IsOnCircle Passes All Tests === ");
+        print("");
+        return true;
     }
 
     public static void print(string msg){
@@ -105,10 +182,12 @@ public class NinePointCircleChecker{
     public double radiusTolerance = 0.001;
     public double pointTolerance = 0.001;
 
-    // the log
-    public List<string> log = new List<string>();
+    // the logs
+    public List<string> CheckPointsLog = new List<string>();
+    
+    public List<string> IsOnCircleLog = new List<string>();
 
-    /
+    
 
     // Constructor that takes the equation for the circle and calculates its center and radius
     public NinePointCircleChecker(double[] centerInput, double radiusInput) {
@@ -144,11 +223,11 @@ public class NinePointCircleChecker{
 
         // Check that the circle passes through the midpoint of each side of the triangle formed by the points
         double[] midpoint1 = GetMidpoint(points[0], points[1]);
-        log.Add($"midpoint1 == ({midpoint1[0]}, {midpoint1[1]})");
+        CheckPointsLog.Add($"midpoint1 == ({midpoint1[0]}, {midpoint1[1]})");
         double[] midpoint2 = GetMidpoint(points[1], points[2]);
-        log.Add($"midpoint2 == ({midpoint2[0]}, {midpoint2[1]})");
+        CheckPointsLog.Add($"midpoint2 == ({midpoint2[0]}, {midpoint2[1]})");
         double[] midpoint3 = GetMidpoint(points[2], points[0]);
-        log.Add($"midpoint3 == ({midpoint3[0]}, {midpoint3[1]})");
+        CheckPointsLog.Add($"midpoint3 == ({midpoint3[0]}, {midpoint3[1]})");
 
         if (!IsOnCircle(midpoint1) || !IsOnCircle(midpoint2) || !IsOnCircle(midpoint3)) {
             return false;
@@ -156,11 +235,11 @@ public class NinePointCircleChecker{
 
         // Check that the circle passes through the foot of each altitude of the triangle formed by the points
         double[] foot1 = GetFoot(points[0], points[1], points[2]);
-        log.Add($"foot1 == ({foot1[0]}, {foot1[1]})");
+        CheckPointsLog.Add($"foot1 == ({foot1[0]}, {foot1[1]})");
         double[] foot2 = GetFoot(points[1], points[2], points[0]);
-        log.Add($"foot2 == ({foot2[0]}, {foot2[1]})");
+        CheckPointsLog.Add($"foot2 == ({foot2[0]}, {foot2[1]})");
         double[] foot3 = GetFoot(points[2], points[0], points[1]);
-        log.Add($"foot3 == ({foot3[0]}, {foot3[1]})");
+        CheckPointsLog.Add($"foot3 == ({foot3[0]}, {foot3[1]})");
 
         if (!IsOnCircle(foot1) || !IsOnCircle(foot2) || !IsOnCircle(foot3)) {
             return false;
@@ -168,14 +247,14 @@ public class NinePointCircleChecker{
 
         // Check that the circle passes through the midpoint of the line segment connecting each vertex to the orthocenter
         double[] orthocenter = GetOrthocenter(points[0], points[1], points[2]);
-        log.Add($"orthocenter == ({orthocenter[0]}, {orthocenter[1]})");
+        CheckPointsLog.Add($"orthocenter == ({orthocenter[0]}, {orthocenter[1]})");
 
         double[] midpoint4 = GetMidpoint(points[0], orthocenter);
-        log.Add($"midpoint4 == ({midpoint4[0]}, {midpoint4[1]})");
+        CheckPointsLog.Add($"midpoint4 == ({midpoint4[0]}, {midpoint4[1]})");
         double[] midpoint5 = GetMidpoint(points[1], orthocenter);
-        log.Add($"midpoint5 == ({midpoint5[0]}, {midpoint5[1]})");
+        CheckPointsLog.Add($"midpoint5 == ({midpoint5[0]}, {midpoint5[1]})");
         double[] midpoint6 = GetMidpoint(points[2], orthocenter);
-        log.Add($"midpoint6 == ({midpoint6[0]}, {midpoint6[1]})");
+        CheckPointsLog.Add($"midpoint6 == ({midpoint6[0]}, {midpoint6[1]})");
 
         if (!IsOnCircle(midpoint4) || !IsOnCircle(midpoint5) || !IsOnCircle(midpoint6)) {
             return false;
@@ -185,14 +264,15 @@ public class NinePointCircleChecker{
     }
 
 
-    // <summary>
+    /// <summary>
     /// Determines whether the given point lies on the circle.
     /// </summary>
     /// <param name="point">The point to check.</param>
     /// <returns>True if the point lies on the circle, false otherwise.</returns>
     /// <author>Generated by ChatGPT</author>
-    private bool IsOnCircle(double[] point) {
+    public bool IsOnCircle(double[] point) {
         double distance = GetDistance(center, point);
+        IsOnCircleLog.Add($"distance == {distance}");
         return Math.Abs(distance - radius) <= pointTolerance;
     }
 
