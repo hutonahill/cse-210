@@ -17,6 +17,19 @@
         },
 
         {
+            "name": "Rithmatist",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-Rithmatist-Rithmatist",
+            "program": "${workspaceFolder}/Rithmatist/Rithmatist/bin/Debug/net7.0/Rithmatist.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/sandbox/Sandbox",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false
+        },
+
+        {
             "name": "C# Prep 1",
             "type": "coreclr",
             "request": "launch",
