@@ -5,9 +5,12 @@ class Porgram{
     public static void Main(){
         
         if (testIsOnCircle() == true){
-            if(testCheckPoints() == true){
-
+            if(testGetOrthocenter() == true){
+                if(testCheckPoints() == true){
+                
+                }
             }
+            
         }
     }
 
@@ -64,7 +67,7 @@ class Porgram{
         NinePointCircleChecker checker;
 
         for (int i = 0; i < centerTestValues.Count; i++){
-            print ($"Test {i+1}: ");
+            print ($"CheckPoints Test {i+1}: ");
             checker = new NinePointCircleChecker(centerTestValues[i], radiusTestValues[i]);
             bool testValue = checker.CheckPoints(testPoints[i]);
             if (testValue == output[i]){
@@ -99,7 +102,8 @@ class Porgram{
                 return false;
             }
         }
-
+        print($" === CheckPoints Passes All Tests === ");
+        print("");
         return true;
     }
 
@@ -134,7 +138,7 @@ class Porgram{
 
         for (int i = 0; i < centerTestValues.Count; i++){
 
-            print($"Test {i+1}:");
+            print($"IsOnCircle Test {i+1}:");
             checker = new NinePointCircleChecker(centerTestValues[i], radiusTestValues[i]);
             checker.pointTolerance = testPointTolerances[i];
 
@@ -169,6 +173,104 @@ class Porgram{
         return true;
     }
 
+
+    public static bool testGetOrthocenter(){
+        List<double[]> point1InputValues = new List<double[]>{
+            new double[] { 0, 0 }, new double[] { 0, 0 },
+            new double[] { 0, 0 }, new double[] { 0, 0 },
+            new double[] { 0, 0 }
+        };
+
+        List<double[]> point2InputValues = new List<double[]>{
+            new double[] { 3, 0 }, new double[] { 3, 0 },
+            new double[] { 2, 4 }, new double[] { 2, 4 },
+            new double[] { 0, 0 }
+        };
+
+        List<double[]> point3InputValues = new List<double[]>{
+            new double[] { 1, 2 }, new double[] { 4, 0 },
+            new double[] { 4, 0 }, new double[] { 4, 4 },
+            new double[] { 0, 0 }
+        };
+
+        List<double[]> expectedOutput = new List<double[]>{
+            new double[] { 1, 0 }, null, new double[] { 2, 0 },
+            new double[] { 2, 0 }, null
+        };
+
+        NinePointCircleChecker checker;
+
+        for (int i = 0; i < point1InputValues.Count; i++){
+            checker= new NinePointCircleChecker();
+
+            print($"GetOrthocenter Test {i+1}:");
+
+            double[] actualOutput = checker.GetOrthocenter(
+                point1InputValues[i], point2InputValues[i], point3InputValues[i]
+            );
+
+            bool isPass = true;
+            if(actualOutput == null){
+                if (expectedOutput[i] == null){
+                    isPass = true;
+                }
+                else{
+                    isPass = false;
+                }
+            }
+            else{
+                if (Math.Abs(actualOutput[0] - expectedOutput[i][0]) < checker.pointTolerance){
+                    isPass = true;
+                }
+                else{
+                    isPass = false;
+                }
+
+                if (Math.Abs(actualOutput[1] - expectedOutput[i][1]) < checker.pointTolerance){
+                    isPass = true;
+                }
+                else{
+                    isPass = false;
+                }
+            }
+            
+
+           
+
+            if (isPass == true){
+                print($"    Pass");
+            }
+            else{
+                print($"    Fail");
+                print($"    Test Values:");
+                print($"        point1Values[{i}] == ({point1InputValues[i][0]}, {point1InputValues[i][1]})");
+                print($"        point2Values[{i}] == ({point2InputValues[i][0]}, {point2InputValues[i][1]})");
+                print($"        point3Values[{i}] == ({point3InputValues[i][0]}, {point3InputValues[i][1]})");
+                print($"        expectedOutput[{i}] == ({expectedOutput[i][0]}, {expectedOutput[i][1]})");
+                if (actualOutput == null){
+                    print($"        actualOutput == null");
+                }
+                else{
+                    print($"        actualOutput == ({actualOutput[0]}, {actualOutput[1]})");
+                }
+
+                print($"    Logs:");
+                int j = 0;
+                foreach (string s in checker.GetOrthocenterLog){
+                    print($"        {j}) {s}");
+                    j ++;
+                }
+
+                i = point1InputValues.Count;
+                return false;
+            }
+
+        }
+        print($" === GetOrthocenter Passes All Tests === ");
+        print("");
+        return true;
+    }
+    
     public static void print(string msg){
         Console.WriteLine(msg);
     }
@@ -187,6 +289,8 @@ public class NinePointCircleChecker{
     
     public List<string> IsOnCircleLog = new List<string>();
 
+    public List<string> GetOrthocenterLog = new List<string>();
+
     
 
     // Constructor that takes the equation for the circle and calculates its center and radius
@@ -197,6 +301,10 @@ public class NinePointCircleChecker{
         }
         
         radius = radiusInput;
+    }
+
+    public NinePointCircleChecker(){
+        
     }
 
     /// <summary>
@@ -285,10 +393,17 @@ public class NinePointCircleChecker{
     /// <param name="point3">The third vertex of the triangle.</param>
     /// <returns>The coordinates of the orthocenter as a double array.</returns>
     /// <author>Generated by ChatGPT</author>
-    private double[] GetOrthocenter(double[] point1, double[] point2, double[] point3) {
+    public double[] GetOrthocenter(double[] point1, double[] point2, double[] point3) {
+        if ((point2[1] - point1[1]) * (point3[0] - point2[0]) == (point3[1] - point2[1]) * (point2[0] - point1[0])) {
+            return null;
+        }
+       
         // Calculate the slopes of the two lines that form the two altitudes of the triangle.
-        double slope1 = (point2[1] - point1[1]) / (point2[0] - point1[0]);
-        double slope2 = (point3[1] - point2[1]) / (point3[0] - point2[0]);
+        double slope1 = (point2[0] - point1[0]) / (point1[1] - point2[1]);
+        GetOrthocenterLog.Add($"slope1 == {slope1}");
+
+        double slope2 = (point3[0] - point2[0]) / (point2[1] - point3[1]);
+        GetOrthocenterLog.Add($"slope2 == {slope2}");
 
         // Check if the slopes are equal, in which case the triangle is degenerate and has no orthocenter.
         if (slope1 == slope2) {
@@ -296,10 +411,11 @@ public class NinePointCircleChecker{
         }
 
         // Calculate the x-coordinate of the orthocenter.
-        double x = (slope1 * slope2 * (point1[1] - point3[1]) + slope2 * (point1[0] + point2[0]) - slope1 * (point2[0] + point3[0])) / (2 * (slope2 - slope1));
+        double  x = ((slope1 * slope2 * (point1[1] - point3[1])) + (slope2 * point1[0]) - (slope1 * point3[0])) / (slope2 - slope1);
+        GetOrthocenterLog.Add($"x == {x}");
 
         // Calculate the y-coordinate of the orthocenter.
-        double y = ((x - (point1[0] + point2[0]) / 2) / (point2[0] - point1[0])) * (point2[1] - point1[1]) + (point1[1] + point2[1]) / 2;
+        double y = -slope1 * (x - point1[0]) + point1[1];;
 
         // Return the coordinates of the orthocenter as a double array.
         return new double[] { x, y };
