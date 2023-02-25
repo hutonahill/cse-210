@@ -9,7 +9,7 @@ using System.Text.Json;
 // on line 27
 
 /// <summary>
-/// a framework that get commands from users. To add a command create a 
+/// a framework that gets commands from users. To add a command create a 
 /// functionClass and add a new object to the function object list
 /// This code snippet was written with the help of ChatGPT.
 /// </summary>
@@ -18,12 +18,12 @@ public static class Program{
     
     public static char[] bannedChars =" &%$#@*(){}[]'=+_".ToCharArray();
 
+    public static string Title = "Program.cs";
+
     private static Dictionary<string, functionClass> registeredFunctions 
     = new Dictionary<string, functionClass>();
 
     private static List<functionClass> functionObjects;
-
-    public static string Title = "Program.cs";
 
     static void Main(string[] args){
 
@@ -41,9 +41,6 @@ public static class Program{
             constructFramework();
         }
         
-
-        
-
         //define some variables so compiler wont give us errors about undefined functions.
         string commandInput = "";
         List<string> flagInput = new List<string>();
@@ -59,8 +56,6 @@ public static class Program{
 
             flagInput = ExtractFlagsAndParameters(copyData[1]);
 
-            
-            
             if (flagInput == null){
                 // do nothing, ExtractFlagsAndParameters handels informing 
                 // the user of errors.
@@ -413,32 +408,54 @@ class myError{
 /// </summary>
 public abstract class functionClass{
 
-
+    /// <summary>
+    /// String <c>Title</c> The tile of the function, displayed when the user runs
+    /// the help command
+    /// </summary>
     public string Title{
         get;
         protected set;
     }
 
+    /// <summary>
+    /// String <c>Discription</c> A discription of what the fuction does.
+    /// </summary>
     public string Discription{
         get;
         protected set;
     }
 
+    /// <summary>
+    /// List<String> <c>CommandInputs</c> a list of strings that the system will
+    /// recignize as calling this function.
+    /// </summary>
     public List<string> CommandInputs {
         get;
         protected set;
     }
 
+    /// <summary>
+    /// List<flagClass> <c>FlagObjects</c> a list of flags intigrated with 
+    /// this function.
+    /// </summary>
     public List<flagClass> FlagObjects {
         get;
         protected set;
     }
 
+    /// <summary>
+    /// Dictionary<string, flagClass> <c>FlagRegistry</c> a dict of flags with
+    /// there inputs (found in flagClass.Flags) as the key
+    /// </summary>
     public Dictionary<string, flagClass> FlagRegistry{
         get;
         protected set;
     }
 
+    /// <summary>
+    /// String <c>displayCommandInputs</c> compiles a list of commands from 
+    /// CommandInputs and returns a string for the help function
+    /// </summary>
     public string displayCommandInputs(){
         
         string output = "";
@@ -454,6 +471,10 @@ public abstract class functionClass{
         return output;
     }
 
+    /// <summary>
+    /// String <c>displayFlagInputs</c> compiles a list of flags and there
+    /// registerd commands (found in flagClass.Flags)
+    /// </summary>
     public string displayFlagInputs(){
 
         // convert an int into a roman numeral (sorce: https://stackoverflow.com/a/11749642/13091622)
@@ -529,7 +550,11 @@ public abstract class functionClass{
         return output;
     }
 
-    public void constructFlagRegistry(){
+    /// <summary>
+    /// void <c>constructFlagRegistry</c> constructs FlagRegistry using 
+    /// the flag objects in FlagObjects. MUST be run in the constructer.
+    /// </summary>
+    protected void constructFlagRegistry(){
         // if there are flags register.
 
         FlagRegistry = new Dictionary<string, flagClass>();
@@ -591,6 +616,11 @@ public abstract class functionClass{
         }
     }
 
+    /// <summary>
+    /// void <c>run</c> if there are any flags run figures out which one and 
+    /// runs it. if not it runs runNoFlag()
+    /// </summary>
+    /// <param name="flags"> a list of flags the user input.</peram>
     public void run(List<string> flags){
         
         if (flags.Count == 0){
@@ -636,7 +666,7 @@ public abstract class functionClass{
     /// <param name="input">A string</param>
     /// <returns>A parameter (words surrounded with parentheses)</returns>
     /// <author>This code snippet was written with the help of ChatGPT.</author>
-    public static string ExtractParameter(string input){
+    private static string ExtractParameter(string input){
         input = input + " ";
         int openParentheses = 0;
         int closeParentheses = 0;
@@ -729,6 +759,9 @@ public abstract class functionClass{
         return result;
     }
 
+    /// <summary>
+    /// void <c>runNoFlag</c> the default code that runs when there are no flags.
+    /// </summary>
     protected abstract void runNoFlag();
 
 }
@@ -738,26 +771,46 @@ public abstract class functionClass{
 /// </summary>
 public abstract class flagClass{
 
+    /// <summary>
+    /// String <c>Title</c> The tile of the flag, displayed when the user runs
+    /// the help command
+    /// </summary>
     public string Title{
         get;
         protected set;
     }
 
+    /// <summary>
+    /// String <c>Discription</c> A discription of what the flag does.
+    /// </summary>
     public string Discription{
         get;
         protected set;
     }
 
+    /// <summary>
+    /// List<String> <c>Flags</c> A list of strings that the system recignises
+    /// as this flag.
+    /// </summary>
     public List<string> Flags {
         get;
         protected set;
     }
 
+    /// <summary>
+    /// String <c>Paramiter</c> A discription of the peramiter of the flag
+    /// if it has one.
+    /// </summary>
     public string Paramiters{
         get;
         protected set;
     }
 
+    /// <summary>
+    /// void <c>run</c> Code that runs when the the flag is triggered.
+    /// if it has one.
+    /// <param name="peramiter"> the flags peramiter.  If flag has no peramiter input "".</peram>
+    /// </summary>
     public abstract void run(string peramiter);
 
 }
