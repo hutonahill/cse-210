@@ -517,7 +517,7 @@ public abstract class functionClass{
                 string gap = "\n          ";
 
                 //remove spaces so everything lines up
-                for (int j = 0; j < extraChar; j++){
+                for (int j = 0; j < extraChar + 1; j++){
                     gap = gap +"\b";
                 }
 
