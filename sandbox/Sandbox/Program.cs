@@ -511,7 +511,7 @@ public abstract class functionClass{
 
                 // two tabs deep
                 output = output + (
-                    $"\n          {ToRoman(i)} {targetObject.Title}:"
+                    $"\n          {ToRoman(i+1)} {targetObject.Title}:"
                 );
 
                 // three tabs deep

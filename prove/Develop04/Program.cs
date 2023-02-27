@@ -33,7 +33,7 @@ public static class Program{
         running = true;
 
         functionObjects = new List<functionClass>{
-            new Quit()
+            new Quit(), new BreathingFunction()
         };
         
         // set up the command framework
@@ -357,6 +357,25 @@ public static class Program{
         Console.WriteLine();
     }
 
+    public static void printNoLine(string msg){
+        Console.Write(msg);
+    }
+
+    public static void delLine(){
+        // Move the cursor to the beginning of the last line
+        Console.SetCursorPosition(0, Console.CursorTop);
+
+        // Clear the last line
+        Console.Write(new string(' ', Console.WindowWidth));
+
+        // Move the cursor back to the beginning of the line
+        Console.SetCursorPosition(0, Console.CursorTop);
+    }
+
+    public static void clearTerminal(){
+        Console.Clear();
+    }
+
     public static string input(string prompt){
         Console.Write(prompt);
         return Console.ReadLine();
@@ -511,7 +530,7 @@ public abstract class functionClass{
 
                 // two tabs deep
                 output = output + (
-                    $"\n          {ToRoman(i)} {targetObject.Title}:"
+                    $"\n          {ToRoman(i+1)} {targetObject.Title}:"
                 );
 
                 // three tabs deep
@@ -591,6 +610,14 @@ public abstract class functionClass{
                         $"'{Title}' contains banned char " +
                         $"'{Program.bannedChars[charCheck]}'.");
                         
+                        Program.running = false;
+                    }
+
+                    //make sure the flag stats with -
+                    else if (targetFlag[0] != '-'){
+                        Program.print($"ERROR: flag '{targetFlag}' for function " + 
+                        $"'{Title}' does not start with the '-' char.");
+
                         Program.running = false;
                     }
 
@@ -853,7 +880,7 @@ class testFlag:flagClass{
         Title = "Testing Flag";
         Discription = "Makes sure the flag system is working properly";
         Flags = new List<string>{
-            "-t", "test", "t"
+            "-t", "-test"
         };
         Paramiters = "string peram - sting to output";
     }
@@ -870,7 +897,7 @@ class testFlag:flagClass{
 }
 
 // activity structure
-abstract class activity{
+abstract class activityClass{
     protected string IntroMsg {
         get;
         set;
@@ -879,7 +906,7 @@ abstract class activity{
     private string EndMsg {
         get;
         set;
-    } = "Good Job!";
+    } = $"Good Job!";
 
     protected int minForActivity {
         get;
@@ -898,23 +925,64 @@ abstract class activity{
 
     protected abstract void activety();
 
-    protected void runAbstract(){
+    public void runActvity(int min = -1){
         Program.print(IntroMsg);
 
-        System.Threading.Thread.Sleep(1000);
+        spin(1);
+        
         Program.print(activetyTitle);
         Program.print(activetyDiscription);
-        minForActivity = IntInput(
-            "How many minates would you like to spend on this activity?"
-        );
-        Program.print("Prepair to begain");
+        if (min == -1){
+            minForActivity = IntInput(
+                "How many minates would you like to spend on this activity? "
+            );
+        }
+        else{
+            minForActivity = min;
+        }
+        
+        Program.print("Prepare to begain.");
+        spin(1);
+        
+        Program.clearTerminal();
 
         activety();
 
         Program.print(EndMsg);
-        System.Threading.Thread.Sleep(1000);
-        Program.print($"The actvity lasted {minForActivity} minates.");
-        System.Threading.Thread.Sleep(3000);
+        spin(1);
+        Program.print($"The actvity lasted {minForActivity} minute(s).");
+        spin(2);
+    }
+
+    /// <summary>
+    /// Spins a console spinner for a given number of seconds with a configurable pause time.
+    /// </summary>
+    /// <param name="seconds">The number of seconds to spin the console spinner.</param>
+    /// <param name="pauseTime">The pause time between each spinner sequence. Defaults to 100 milliseconds if not provided.</param>
+    private void spin(int seconds, int pauseTime = 100){
+        List<string> sequance = new List<string>{
+            "\\", "|", "/", "-"
+        };
+
+        
+
+        int miliSecs = seconds * 1000;
+
+        int timeCount = 0;
+        int charCounter = 1;
+
+        while (timeCount <miliSecs){
+            // print the char
+            Program.printNoLine(sequance[charCounter % sequance.Count]);
+            charCounter ++;
+
+            System.Threading.Thread.Sleep(pauseTime);
+            timeCount = timeCount + pauseTime;
+
+            // remove the old char
+            Program.printNoLine($"\b \b \b");
+        }
+        
     }
 
     /// <summary>
@@ -929,15 +997,241 @@ abstract class activity{
             string input = Program.input(prompt);
 
             int result;
-            if (int.TryParse(input, out result) == true){
+            if (int.TryParse(input, out result) == false){
+                Program.print("Invalid input. Please enter an integer.");
+            }
+            else if(result < 1){
+                Program.print("Invalid input. Please enter a number greater than 0.");
+            }
+            else{
                 output = result;
                 validInput = true;
             }
 
-            Program.print("Invalid input. Please enter an integer.");
+            
         }
 
         return output;
     }
 }
 
+
+
+class BreathingFunction:functionClass{
+    
+    
+
+    public BreathingFunction(){
+        Title = "Breathing";
+
+        Discription = "Runs the breathing activity";
+
+        CommandInputs = new List<string>{
+            "breath", "breathing"
+        };
+
+        FlagObjects = new List<flagClass>{
+            new editHold(), new editPause(), new activetyTime()
+        };
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+    
+    public BreathingFunction(bool functions){
+
+    }
+    protected override void runNoFlag(){
+        BreathingActivity breathingActivity = new BreathingActivity();
+        breathingActivity.runActvity();
+    }
+
+    /// <summary>
+    /// Converts a string to an integer. If the conversion fails, it informs the user and returns null.
+    /// </summary>
+    /// <param name="str">The string to convert to an integer.</param>
+    /// <returns>The integer value of the string, or null if the conversion fails.</returns>
+    public int? StringToInt(string str, int min){
+        int result;
+
+        // Try to parse the string as an integer
+        if (int.TryParse(str, out result) == false){
+            // The string could not be parsed as an integer, so inform the user and return null
+            Program.print($"The peramiter for the flag {Title} must be an intiger.");
+            return null;
+        }
+
+        else if(result < min){
+            Program.print($"The peramiter for the flag {Title} must 0 or greater.");
+            return null;
+        }
+
+        else{
+            
+
+            // The string was successfully parsed as an integer, so return the result
+            return result;
+        }
+    }
+}
+
+class BreathingActivity:activityClass{
+
+    public int holdTime = 3;
+
+    public int pauseTime = 1500;
+
+    public BreathingActivity(){
+        IntroMsg = "Welcome to the Breathing Activity";
+
+	    minForActivity = 0;
+
+	    activetyDiscription = (
+            "This activity will help you relax by walking your through breathing " + 
+            "in and out slowly. Clear your mind and focus on your breathing."
+        );
+
+	    activetyTitle = "Breathing Activity";
+    }
+
+    protected override void activety(){
+
+        // in mili seconds
+        int timeCounter = 0;
+
+        string inMsg = "Breathe in...";
+
+        string outMsg = "Breathe out...";
+
+        List<string> msgs = new List<string>{
+            inMsg, outMsg
+        };
+
+        int currentMsg = 0;
+
+        // min * 60 sec in min * 1000 mili seconds in second.
+        while (timeCounter < minForActivity*60*1000){
+            Program.printNoLine(msgs[currentMsg]);
+
+            wait(pauseTime+500);
+            timeCounter = timeCounter + pauseTime;
+
+            // delete the old line
+            Program.delLine();
+
+            // preform count down 
+            for (int i = holdTime; i > 0; i--){
+                Program.printNoLine($"{i}");
+                wait(1000);
+                timeCounter = timeCounter + 1000;
+                Program.printNoLine("\b \b");
+            }
+
+            if (currentMsg == 0){
+                currentMsg = 1;
+            }
+            else{
+                currentMsg = 0;
+            }
+
+        }
+    }
+
+    private void wait(int milliseconds){
+        System.Threading.Thread.Sleep(milliseconds);
+    }
+}
+
+class editHold:flagClass{
+    
+    public editHold(){
+        Title = "Edit Hold Time";
+        
+        Discription = "Allows the user to change to the " + 
+        "ammount of time breath is held.";
+        
+        Flags = new List<string>{
+            "-ht", "-holdTime"
+        };
+        
+        Paramiters = "int seconds - the number of seconds breath is to be held.";
+    }
+
+    public override void run(string peramiter){
+        
+        BreathingFunction breathingFunction = new BreathingFunction(true);
+
+        int? seconds = breathingFunction.StringToInt(peramiter, 0);
+
+        if (seconds != null){
+            BreathingActivity breathingActivity = new BreathingActivity();
+            breathingActivity.holdTime = seconds ?? 0;
+            breathingActivity.runActvity();
+        }
+        
+    }
+
+    
+}
+
+class editPause:flagClass{
+    public editPause(){
+        Title = "Edit Pause Time";
+        
+        Discription = "Allows the user to change to the " + 
+        "ammount of time the breath message is displayed.";
+        
+        Flags = new List<string>{
+            "-pt", "-pauseTime"
+        };
+        
+        Paramiters = "int miliSeconds - the number of miliseconds the " +
+        "breathing message is displayed.";
+    }
+
+    public override void run(string peramiter){
+        
+        BreathingFunction breathingFunction = new BreathingFunction(true);
+
+        int? miliSeconds = breathingFunction.StringToInt(peramiter, 0);
+
+        if (miliSeconds != null){
+            BreathingActivity breathingActivity = new BreathingActivity();
+            breathingActivity.pauseTime = miliSeconds ?? 0;
+            breathingActivity.runActvity();
+        }
+        
+    }
+}
+
+
+class activetyTime:flagClass{
+    public activetyTime(){
+        Title = "Activity Time";
+        
+        Discription = "Allows the user to pass to the " + 
+        "length of the actvity in the function call.";
+        
+        Flags = new List<string>{
+            "-at", "-activityTime"
+        };
+        
+        Paramiters = "int minutes - the number of minutes the actvity will " + 
+        "last.";
+    }
+
+    public override void run(string peramiter){
+        
+        BreathingFunction breathingFunction = new BreathingFunction(true);
+
+        int? mins = breathingFunction.StringToInt(peramiter, 1);
+
+        if (mins != null){
+            BreathingActivity breathingActivity = new BreathingActivity();
+            breathingActivity.runActvity(mins ?? 0);
+        }
+        
+    }
+
+}
