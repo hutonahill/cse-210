@@ -528,10 +528,21 @@ public abstract class functionClass{
 
                 
 
-                // two tabs deep
-                output = output + (
-                    $"\n          {ToRoman(i+1)} {targetObject.Title}:"
-                );
+                // construct roman numeral and gap
+                string numeral = ToRoman(i+1);
+                int extraChar = numeral.Length - 1;
+
+                //two tabs deep
+                string gap = "\n          ";
+
+                //remove spaces so everything lines up
+                for (int j = 0; j < extraChar; j++){
+                    gap = gap +"\b";
+                }
+
+                output = output + $"{gap}{numeral} {targetObject.Title}";
+
+                
 
                 // three tabs deep
                 output = output + (
