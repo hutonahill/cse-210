@@ -49,8 +49,9 @@ public static class Program{
         while (running == true){
             // get input from the user to determin what to do.
             string rawInput = input($"{Title}> ");
+            
 
-            List<string> copyData = ExtractCommand(rawInput);
+            List<string> copyData = new List<string>(ExtractCommand(rawInput));
 
             commandInput = copyData[0];
 
@@ -63,7 +64,7 @@ public static class Program{
             // if the user asked for help and the program is still running
             // run the help function
             else if (commandInput == "help" ){
-                help(functionObjects, flagInput);
+                help(functionObjects, copyData[1]);
             }
 
             // if the program is still running run the input command
@@ -298,46 +299,47 @@ public static class Program{
     /// </summary>
     /// <param name="functions">a list of funciton objects</param>
     /// <param name="flags"> a list of flags the user input.</peram>
-    private static void help(List<functionClass> functions, List<string> flags){
+    private static void help(List<functionClass> functions, string flags){
         
-        if ((functions.Count != 0) && (flags.Count == 0)){
+        if ((functions.Count != 0) && (flags == "")){
 
-            string output = "Commands:";
+            printf("Commands:");
 
             for (int i = 0; i < functions.Count; i++){
                 functionClass targetCommand = functions[i];
-                string copyData = targetCommand.displayFlagInputs();
-
-                output = output + ($"\n{i+1} {targetCommand.Title}" + 
-                        $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
-                        $"\n    Discription: {targetCommand.Discription}" + 
-                        $"\n    Function Flags: {copyData}" +
-                        $"\n");
-            }
-            
-            print(output);
-        }
-        else if (functions.Count != 0){
-            if (flags.Count == 1){
-                if (registeredFunctions.ContainsKey(flags[0]) == true){
-                    
-                    functionClass targetCommand = registeredFunctions[flags[0]];
-                    
-                    string copyData = targetCommand.displayFlagInputs();
-
-                    print($"{registeredFunctions[flags[0]].Title}" + 
-                        $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
-                        $"\n    Discription: {targetCommand.Discription}" + 
-                        $"\n    Function Flags: {copyData}" +
-                        $"\n");
-                }
-                else{
-                    print($"The flag {flags[0]} is not a valid command.");
-                }
                 
+                List<(string, int)> flagOutput = targetCommand.displayFlagInputs();
+
+                    printf($"{targetCommand.Title}", 1);
+                    printf($"Valid Inputs: {targetCommand.displayCommandInputs()}", 2); 
+                    printf($"Discription: {targetCommand.Discription}", 2);
+                    printf($"Function Flags:", 2);
+                    for (int j = 0; j < flagOutput.Count; j++){
+                        printf(flagOutput[j].Item1, (flagOutput[j].Item2));
+                    }
+                    print();
+            }
+    
+        }
+        else if ((functions.Count != 0) && (flags != "")){
+            
+            if (registeredFunctions.ContainsKey(flags) == true){
+                
+                functionClass targetCommand = registeredFunctions[flags];
+                
+                List<(string, int)> flagOutput = targetCommand.displayFlagInputs();
+
+                printf($"{targetCommand.Title}");
+                printf($"Valid Inputs: {targetCommand.displayCommandInputs()}", 1); 
+                printf($"Discription: {targetCommand.Discription}", 1);
+                printf($"Function Flags:", 1);
+                for (int j = 0; j < flagOutput.Count; j++){
+                    printf(flagOutput[j].Item1, flagOutput[j].Item2);
+                }
+                print();
             }
             else{
-                print($"help only accepts one flag, you input {flags.Count}.  Please try agean.");
+                print($"The flag {flags} is not a valid command.");
             }
         }
 
@@ -346,6 +348,70 @@ public static class Program{
         }
     }
 
+    /// <summary>
+    /// Prints the input text to the console, wrapping it to fit within the 
+    /// console window width without cutting words, and optionally indents new lines by the specified number of tabs.
+    /// </summary>
+    /// <param name="text">The text to print.</param>
+    /// <param name="tabLevel">The number of tabs to use for indenting new lines (default 0).</param>
+    /// <param name="tabWidth">The width of each tab character in spaces (default 4).</param>
+    public static void printf(string text, int tabLevel = 0, int extraTab = 1, int tabWidth = 4){
+        // Get the width of the console window in characters.
+        int consoleWidth = Console.WindowWidth - 7;
+
+        string gap = "";
+        for (int i = 0; i < tabLevel; i++){
+            gap = gap + new string(' ', tabWidth);
+            
+        }
+        
+        if ((gap.Length + 10) > consoleWidth){
+            print(text);
+        }
+        else if ((text.Length + gap.Length) > consoleWidth){
+            
+            // Split the input text into an array of words.
+            string[] words = text.Split(' ');
+
+            // Initialize the current line length and indentation level to 0.
+            int currentLineLength = 0;
+
+            printNoLine(gap);
+            currentLineLength = gap.Length;
+            for (int i = 0; i < extraTab; i++){
+                gap = gap + new string(' ', tabWidth);
+                
+            }
+
+            // Iterate over each word in the array.
+            foreach (string word in words){
+                // Check if adding the word to the current line would exceed the console window width.
+                if (currentLineLength + word.Length + 1 > consoleWidth){
+                    // If it does, start a new line and 
+                    print();
+
+                    // indent the new line by the current indentation level.
+                    
+                    printNoLine(gap);
+
+                    // Reset the current line length to 0.
+                    currentLineLength = gap.Length;
+                }
+
+                // Write the word to the console with a trailing space character.
+                printNoLine(word + " ");
+
+                // Update the current line length to include the length of the word and the space character.
+                currentLineLength += word.Length + 1;
+
+            }
+            print();
+        }
+        else{
+            // If the text fits within the console window, print it as is.
+            print($"{gap}{text}");
+        }
+    }
 
     // inputs and outputs
     
@@ -390,10 +456,6 @@ public static class Program{
 }
 
 // Data Types
-
-class ScriptureJson {
-    public Dictionary<string, string> dict { get; set; }
-}
 
 class myError{
     private bool isError = false;
@@ -485,7 +547,7 @@ public abstract class functionClass{
         }
         
         // remove the ',' from the end of the string
-        output = output.Remove(output.Length - 1, 1);
+        output = output.Remove(output.Length - 2, 2);
 
         return output;
     }
@@ -494,7 +556,7 @@ public abstract class functionClass{
     /// String <c>displayFlagInputs</c> compiles a list of flags and there
     /// registerd commands (found in flagClass.Flags)
     /// </summary>
-    public string displayFlagInputs(){
+    public List<(string, int)> displayFlagInputs(){
 
         // convert an int into a roman numeral (sorce: https://stackoverflow.com/a/11749642/13091622)
         string ToRoman(int number){
@@ -517,7 +579,7 @@ public abstract class functionClass{
             throw new Exception("Impossible state reached");
         }
 
-        string output = "";
+        List<(string,int)> output = new List<(string, int)>();
 
 
         if (FlagObjects.Count != 0){
@@ -526,43 +588,43 @@ public abstract class functionClass{
             for (int i = 0; i < FlagObjects.Count; i++){
                 flagClass targetObject = FlagObjects[i];
 
-                
+                string copyData = "";
 
                 // construct roman numeral and gap
                 string numeral = ToRoman(i+1);
                 int extraChar = numeral.Length - 1;
 
                 //two tabs deep
-                string gap = "\n          ";
-
-                //remove spaces so everything lines up
-                for (int j = 0; j < extraChar; j++){
-                    gap = gap +"\b";
-                }
-
-                output = output + $"{gap}{numeral} {targetObject.Title}";
+                output.Add(($"{numeral} {targetObject.Title}", 2));
 
                 
 
                 // three tabs deep
-                output = output + (
-                    $"\n              Discription: {targetObject.Discription}"
+                output.Add(
+                    ($"Discription: {targetObject.Discription}", 3)
                 );
 
                 // loop thorugh each command in the flag dictionary.
                 if (targetObject.Flags.Count != 1){
-                    output = output + ($"\n              Flags: ");
+                    
+                    // threee tabs deep
+                    copyData = $"Flags: ";
                     for (int j = 0; j < targetObject.Flags.Count; j++){
                         
-                        output = output + $"'{targetObject.Flags[j]}', ";
+                        copyData = copyData + $"'{targetObject.Flags[j]}', ";
                         
                     }
                     // remove the ',' from the end of the string
-                    output = output.Remove(output.Length - 1, 1);
+                    copyData = copyData.Remove(copyData.Length - 1, 1);
+
+                    // add the string to output. Note its 3 tabs deep.
+                    output.Add((copyData, 3));
 
                     if (targetObject.Paramiters != null){
-                        output = output + $"\n              Peramiters: ";
-                        output = output + $"{targetObject.Paramiters}";
+                        copyData = $"Peramiters: ";
+                        copyData = copyData + $"{targetObject.Paramiters}";
+
+                        output.Add((copyData, 3));
                     }
                     
                     
@@ -574,7 +636,9 @@ public abstract class functionClass{
             }
         }
         else{
-            output = "No Supported Flags.";
+            output =new List<(string, int)>{
+                ("        No Supported Flags.", 2)
+            };
         }
 
         return output;
@@ -932,9 +996,9 @@ abstract class activityClass{
     protected string activetyTitle{
         get;
         set;
-    }
+    } = "";
 
-    protected abstract void activety();
+    protected abstract int activety();
 
     public void runActvity(int min = -1){
         Program.print(IntroMsg);
@@ -957,11 +1021,13 @@ abstract class activityClass{
         
         Program.clearTerminal();
 
-        activety();
+        int timeMS = activety();
+        double timeM = (double) (timeMS / 1000)/60;
+        timeM = Math.Round(timeM, 2);
 
         Program.print(EndMsg);
         spin(1);
-        Program.print($"The actvity lasted {minForActivity} minute(s).");
+        Program.print($"The actvity lasted {timeM} minute(s).");
         spin(2);
     }
 
@@ -970,7 +1036,7 @@ abstract class activityClass{
     /// </summary>
     /// <param name="seconds">The number of seconds to spin the console spinner.</param>
     /// <param name="pauseTime">The pause time between each spinner sequence. Defaults to 100 milliseconds if not provided.</param>
-    private void spin(int seconds, int pauseTime = 100){
+    protected void spin(int seconds, int pauseTime = 100){
         List<string> sequance = new List<string>{
             "\\", "|", "/", "-"
         };
@@ -1024,10 +1090,38 @@ abstract class activityClass{
 
         return output;
     }
+
+    /// <summary>
+    /// Converts a string to an integer. If the conversion fails, it informs the user and returns null.
+    /// </summary>
+    /// <param name="str">The string to convert to an integer.</param>
+    /// <returns>The integer value of the string, or null if the conversion fails.</returns>
+    public int? StringToInt(string str, int min){
+        int result;
+
+        // Try to parse the string as an integer
+        if (int.TryParse(str, out result) == false){
+            // The string could not be parsed as an integer, so inform the user and return null
+            Program.print($"The peramiter for the flag {activetyTitle} must be an intiger.");
+            return null;
+        }
+
+        else if(result < min){
+            Program.print($"The peramiter for the flag {activetyTitle} must 0 or greater.");
+            return null;
+        }
+
+        else{
+            
+
+            // The string was successfully parsed as an integer, so return the result
+            return result;
+        }
+    }
 }
 
 
-
+// Breathing Activity
 class BreathingFunction:functionClass{
     
     
@@ -1042,7 +1136,7 @@ class BreathingFunction:functionClass{
         };
 
         FlagObjects = new List<flagClass>{
-            new editHold(), new editPause(), new activetyTime()
+            new editHold(), new editPause(), new breathActivetyTime()
         };
 
         FlagRegistry = new Dictionary<string, flagClass>();
@@ -1051,40 +1145,14 @@ class BreathingFunction:functionClass{
     }
     
     public BreathingFunction(bool functions){
-
+        
     }
     protected override void runNoFlag(){
         BreathingActivity breathingActivity = new BreathingActivity();
         breathingActivity.runActvity();
     }
 
-    /// <summary>
-    /// Converts a string to an integer. If the conversion fails, it informs the user and returns null.
-    /// </summary>
-    /// <param name="str">The string to convert to an integer.</param>
-    /// <returns>The integer value of the string, or null if the conversion fails.</returns>
-    public int? StringToInt(string str, int min){
-        int result;
-
-        // Try to parse the string as an integer
-        if (int.TryParse(str, out result) == false){
-            // The string could not be parsed as an integer, so inform the user and return null
-            Program.print($"The peramiter for the flag {Title} must be an intiger.");
-            return null;
-        }
-
-        else if(result < min){
-            Program.print($"The peramiter for the flag {Title} must 0 or greater.");
-            return null;
-        }
-
-        else{
-            
-
-            // The string was successfully parsed as an integer, so return the result
-            return result;
-        }
-    }
+    
 }
 
 class BreathingActivity:activityClass{
@@ -1106,7 +1174,7 @@ class BreathingActivity:activityClass{
 	    activetyTitle = "Breathing Activity";
     }
 
-    protected override void activety(){
+    protected override int activety(){
 
         // in mili seconds
         int timeCounter = 0;
@@ -1139,14 +1207,10 @@ class BreathingActivity:activityClass{
                 Program.printNoLine("\b \b");
             }
 
-            if (currentMsg == 0){
-                currentMsg = 1;
-            }
-            else{
-                currentMsg = 0;
-            }
-
+            msgs.Reverse();
         }
+
+        return timeCounter;
     }
 
     private void wait(int milliseconds){
@@ -1171,12 +1235,12 @@ class editHold:flagClass{
 
     public override void run(string peramiter){
         
-        BreathingFunction breathingFunction = new BreathingFunction(true);
+        BreathingActivity breathingActivity = new BreathingActivity();
 
-        int? seconds = breathingFunction.StringToInt(peramiter, 0);
+        int? seconds = breathingActivity.StringToInt(peramiter, 0);
 
         if (seconds != null){
-            BreathingActivity breathingActivity = new BreathingActivity();
+            
             breathingActivity.holdTime = seconds ?? 0;
             breathingActivity.runActvity();
         }
@@ -1203,12 +1267,12 @@ class editPause:flagClass{
 
     public override void run(string peramiter){
         
-        BreathingFunction breathingFunction = new BreathingFunction(true);
+        BreathingActivity breathingActivity = new BreathingActivity();
 
-        int? miliSeconds = breathingFunction.StringToInt(peramiter, 0);
+        int? miliSeconds = breathingActivity.StringToInt(peramiter, 0);
 
         if (miliSeconds != null){
-            BreathingActivity breathingActivity = new BreathingActivity();
+            
             breathingActivity.pauseTime = miliSeconds ?? 0;
             breathingActivity.runActvity();
         }
@@ -1216,9 +1280,8 @@ class editPause:flagClass{
     }
 }
 
-
-class activetyTime:flagClass{
-    public activetyTime(){
+class breathActivetyTime:flagClass{
+    public breathActivetyTime(){
         Title = "Activity Time";
         
         Discription = "Allows the user to pass to the " + 
@@ -1234,13 +1297,254 @@ class activetyTime:flagClass{
 
     public override void run(string peramiter){
         
-        BreathingFunction breathingFunction = new BreathingFunction(true);
+        BreathingActivity breathingActivity = new BreathingActivity();
 
-        int? mins = breathingFunction.StringToInt(peramiter, 1);
+        int? mins = breathingActivity.StringToInt(peramiter, 1);
 
         if (mins != null){
-            BreathingActivity breathingActivity = new BreathingActivity();
             breathingActivity.runActvity(mins ?? 0);
+        }
+        
+    }
+
+}
+
+
+// Reflection Activity
+class ReflectionFunction:functionClass{
+    
+    private string reflectionPath = "ReflectionData.json";
+    
+    public ReflectionFunction(){
+        Title = "Reflection";
+
+        Discription = "Runs the reflection activity";
+
+        CommandInputs = new List<string>{
+            "reflect", "reflection", "Reflect", "Reflection"
+        };
+
+        FlagObjects = new List<flagClass>{
+            new reflectActivetyTime(), new reflectTime()
+        };
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+
+    // allows a new object to be created without generating all the values.
+    public ReflectionFunction(bool gettingMethods){
+
+    }
+
+    protected override void runNoFlag(){
+        ReflectionActivity reflectionActivity = new ReflectionActivity();
+        reflectionActivity.runActvity();
+    }
+
+    public Dictionary<string, List<string>> loadReflectionData(){
+        if (File.Exists(reflectionPath) == true){
+            string jsonString = File.ReadAllText(reflectionPath);
+
+            if (jsonString != ""){
+                ReflectionJson reflectionJson =
+                JsonSerializer.Deserialize<ReflectionJson>(jsonString)!;
+
+                Dictionary<string, List<string>> dict = 
+                new Dictionary<string, List<string>>{
+                    {"times", reflectionJson.times},
+                    {"questions", reflectionJson.questions}
+                };
+                return dict;
+            }
+            else{
+                return new Dictionary<string, List<string>>();
+            }
+            
+        }
+        else{
+            File.Create(reflectionPath);
+            return new Dictionary<string, List<string>>();
+        }
+        
+        
+    }
+
+    public void saveReflectionData(Dictionary<string, List<string>> dict){
+        if (File.Exists(reflectionPath) == false){
+            File.Create(reflectionPath);
+
+            ReflectionJson scriptureJson = new ReflectionJson(){
+                times = new List<string>(),
+                questions = new List<string>()
+            };
+
+            string jsonString = JsonSerializer.Serialize<ReflectionJson>(scriptureJson);
+            File.WriteAllText(reflectionPath, jsonString);
+        }
+        
+        if(dict.Count != 2){
+            throw new FormatException(
+                "dict must only contain the keys 'times' and 'questions'"
+            );
+        }
+
+        else if (dict.ContainsKey("times") == false){
+            throw new FormatException(
+                "dict must  contain the key 'times'"
+            );
+        }
+
+        else if(dict.ContainsKey("questions") == false){
+            throw new FormatException(
+                "dict must contain the key 'questions'"
+            );
+        }
+        else{
+            ReflectionJson scriptureJson = new ReflectionJson(){
+                times = dict["times"],
+                questions = dict["questions"]
+            };
+
+            string jsonString = JsonSerializer.Serialize<ReflectionJson>(scriptureJson);
+            File.WriteAllText(reflectionPath, jsonString);
+        }
+        
+        
+    }
+
+}
+
+class ReflectionActivity:activityClass{
+    
+    public int reflectSeconds = 5;
+
+    public ReflectionActivity(){
+        IntroMsg = "Welcome to the Reflection Activity";
+
+	    minForActivity = 0;
+
+	    activetyDiscription = (
+            "This activity will help you reflect on times in your life " +
+            "when you have shown strength and resilience. " + 
+            "This will help you recognize the power you have and how you " + 
+            "can use it in other aspects of your life."
+        );
+
+	    activetyTitle = "Reflection Activity";
+    }
+
+    protected override int activety(){
+        
+        // load in the quetions and times
+        ReflectionFunction reflectionFunction = new ReflectionFunction(true);
+
+        Dictionary <string, List<string>> dict = reflectionFunction.loadReflectionData();
+
+        List<string> times = dict["times"];
+        List<string> questions = dict["questions"];
+
+        int timeCount = 0;
+
+        //clear the terminal
+        Program.clearTerminal();
+
+        // pick a random time prompt
+        Random rand = new Random();
+
+        int randIndex = rand.Next(times.Count);
+
+        // display it to the user.
+        Program.print(times[randIndex]);
+        
+        // wait 1 second
+        spin(1);
+        timeCount = timeCount + 1000;
+
+        while (timeCount < minForActivity*60*1000){
+            // pick a random question
+            randIndex = rand.Next(questions.Count);
+
+            // display it to the user
+            Program.print(questions[randIndex]);
+
+            // spin for the alloted ammount of time
+            spin(reflectSeconds);
+            timeCount = timeCount + (reflectSeconds * 1000);
+
+            // delete the question in preperation for the next loop
+            Program.delLine();
+        }
+
+        return timeCount;
+
+    }
+}
+
+class ReflectionJson{
+    public List<string> times {get; set;}
+
+    public List<string> questions {get; set;}
+}
+
+class reflectActivetyTime:flagClass{
+    public reflectActivetyTime(){
+        Title = "Activity Time";
+        
+        Discription = "Allows the user to pass to the " + 
+        "length of the actvity in the function call.";
+        
+        Flags = new List<string>{
+            "-at", "-activityTime"
+        };
+        
+        Paramiters = "int minutes - the number of minutes the actvity will " + 
+        "last.";
+    }
+
+    public override void run(string peramiter){
+        
+        ReflectionActivity reflectionActivity = new ReflectionActivity
+        ();
+
+        int? mins = reflectionActivity.StringToInt(peramiter, 1);
+
+        if (mins != null){
+            reflectionActivity.runActvity(mins ?? 0);
+        }
+        
+    }
+
+}
+
+class reflectTime:flagClass{
+    
+    public reflectTime(){
+        Title = "Reflection Time";
+        
+        Discription = "Allows the user to change the ammount of time they " + 
+        "ponder each question";
+        
+        Flags = new List<string>{
+            "-rt", "-reflectTime", "-reflectionTime", "-reflecttime",
+            "-reflectiontime"
+        };
+        
+        Paramiters = "int seconds - the number of sedonds each question " + 
+        "will be pondered";
+    }
+
+    public override void run(string peramiter){
+        
+        ReflectionActivity reflectionActivity = new ReflectionActivity
+        ();
+
+        int? secs = reflectionActivity.StringToInt(peramiter, 1);
+
+        if (secs != null){
+            reflectionActivity.reflectSeconds = secs ?? 0;
+            reflectionActivity.runActvity();
         }
         
     }

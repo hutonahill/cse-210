@@ -63,7 +63,7 @@ public static class Program{
             // if the user asked for help and the program is still running
             // run the help function
             else if (commandInput == "help" ){
-                help(functionObjects, flagInput);
+                help(functionObjects, copyData[1]);
             }
 
             // if the program is still running run the input command
@@ -298,51 +298,110 @@ public static class Program{
     /// </summary>
     /// <param name="functions">a list of funciton objects</param>
     /// <param name="flags"> a list of flags the user input.</peram>
-    private static void help(List<functionClass> functions, List<string> flags){
+    private static void help(List<functionClass> functions, string flags){
         
-        if ((functions.Count != 0) && (flags.Count == 0)){
+        if ((functions.Count != 0) && (flags == "")){
 
-            string output = "Commands:";
+            printf("Commands:");
 
             for (int i = 0; i < functions.Count; i++){
                 functionClass targetCommand = functions[i];
-                string copyData = targetCommand.displayFlagInputs();
-
-                output = output + ($"\n{i+1} {targetCommand.Title}" + 
-                        $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
-                        $"\n    Discription: {targetCommand.Discription}" + 
-                        $"\n    Function Flags: {copyData}" +
-                        $"\n");
-            }
-            
-            print(output);
-        }
-        else if (functions.Count != 0){
-            if (flags.Count == 1){
-                if (registeredFunctions.ContainsKey(flags[0]) == true){
-                    
-                    functionClass targetCommand = registeredFunctions[flags[0]];
-                    
-                    string copyData = targetCommand.displayFlagInputs();
-
-                    print($"{registeredFunctions[flags[0]].Title}" + 
-                        $"\n    Valid Inputs: {targetCommand.displayCommandInputs()}" + 
-                        $"\n    Discription: {targetCommand.Discription}" + 
-                        $"\n    Function Flags: {copyData}" +
-                        $"\n");
-                }
-                else{
-                    print($"The flag {flags[0]} is not a valid command.");
-                }
                 
+                List<(string, int)> flagOutput = targetCommand.displayFlagInputs();
+
+                    printf($"{targetCommand.Title}", 1);
+                    printf($"Valid Inputs: {targetCommand.displayCommandInputs()}", 2); 
+                    printf($"Discription: {targetCommand.Discription}", 2);
+                    printf($"Function Flags:", 2);
+                    for (int j = 0; j < flagOutput.Count; j++){
+                        printf(flagOutput[j].Item1, (flagOutput[j].Item2));
+                    }
+                    print();
+            }
+    
+        }
+        else if ((functions.Count != 0) && (flags != "")){
+            
+            if (registeredFunctions.ContainsKey(flags) == true){
+                
+                functionClass targetCommand = registeredFunctions[flags];
+                
+                List<(string, int)> flagOutput = targetCommand.displayFlagInputs();
+
+                printf($"{targetCommand.Title}");
+                printf($"Valid Inputs: {targetCommand.displayCommandInputs()}", 1); 
+                printf($"Discription: {targetCommand.Discription}", 1);
+                printf($"Function Flags:", 1);
+                for (int j = 0; j < flagOutput.Count; j++){
+                    printf(flagOutput[j].Item1, flagOutput[j].Item2);
+                }
+                print();
             }
             else{
-                print($"help only accepts one flag, you input {flags.Count}.  Please try agean.");
+                print($"The flag {flags} is not a valid command.");
             }
         }
 
         else{
             print("No registered commands");
+        }
+    }
+
+    public static void printf(string text, int tabLevel = 0, int extraTab = 1, int tabWidth = 4){
+        // Get the width of the console window in characters.
+        int consoleWidth = Console.WindowWidth - 7;
+
+        string gap = "";
+        for (int i = 0; i < tabLevel; i++){
+            gap = gap + new string(' ', tabWidth);
+            
+        }
+        
+        if ((gap.Length + 10) > consoleWidth){
+            print(text);
+        }
+        else if ((text.Length + gap.Length) > consoleWidth){
+            
+            // Split the input text into an array of words.
+            string[] words = text.Split(' ');
+
+            // Initialize the current line length and indentation level to 0.
+            int currentLineLength = 0;
+
+            printNoLine(gap);
+            currentLineLength = gap.Length;
+            for (int i = 0; i < extraTab; i++){
+                gap = gap + new string(' ', tabWidth);
+                
+            }
+
+            // Iterate over each word in the array.
+            foreach (string word in words){
+                // Check if adding the word to the current line would exceed the console window width.
+                if (currentLineLength + word.Length + 1 > consoleWidth){
+                    // If it does, start a new line and 
+                    print();
+
+                    // indent the new line by the current indentation level.
+                    
+                    printNoLine(gap);
+
+                    // Reset the current line length to 0.
+                    currentLineLength = gap.Length;
+                }
+
+                // Write the word to the console with a trailing space character.
+                printNoLine(word + " ");
+
+                // Update the current line length to include the length of the word and the space character.
+                currentLineLength += word.Length + 1;
+
+            }
+            print();
+        }
+        else{
+            // If the text fits within the console window, print it as is.
+            print($"{gap}{text}");
         }
     }
 
@@ -355,6 +414,10 @@ public static class Program{
 
     public static void print(){
         Console.WriteLine();
+    }
+
+    public static void printNoLine(string msg){
+        Console.Write(msg);
     }
 
     public static string input(string prompt){
@@ -475,7 +538,7 @@ public abstract class functionClass{
     /// String <c>displayFlagInputs</c> compiles a list of flags and there
     /// registerd commands (found in flagClass.Flags)
     /// </summary>
-    public string displayFlagInputs(){
+    public List<(string, int)> displayFlagInputs(){
 
         // convert an int into a roman numeral (sorce: https://stackoverflow.com/a/11749642/13091622)
         string ToRoman(int number){
@@ -498,7 +561,7 @@ public abstract class functionClass{
             throw new Exception("Impossible state reached");
         }
 
-        string output = "";
+        List<(string,int)> output = new List<(string, int)>();
 
 
         if (FlagObjects.Count != 0){
@@ -507,41 +570,43 @@ public abstract class functionClass{
             for (int i = 0; i < FlagObjects.Count; i++){
                 flagClass targetObject = FlagObjects[i];
 
-                
+                string copyData = "";
 
                 // construct roman numeral and gap
                 string numeral = ToRoman(i+1);
                 int extraChar = numeral.Length - 1;
 
                 //two tabs deep
-                string gap = "\n          ";
+                output.Add(($"{numeral} {targetObject.Title}", 2));
 
-                //remove spaces so everything lines up
-                for (int j = 0; j < extraChar + 1; j++){
-                    gap = gap +"\b";
-                }
-
-                output = output + $"{gap}{numeral} {targetObject.Title}";
+                
 
                 // three tabs deep
-                output = output + (
-                    $"\n              Discription: {targetObject.Discription}"
+                output.Add(
+                    ($"Discription: {targetObject.Discription}", 3)
                 );
 
                 // loop thorugh each command in the flag dictionary.
                 if (targetObject.Flags.Count != 1){
-                    output = output + ($"\n              Flags: ");
+                    
+                    // threee tabs deep
+                    copyData = $"Flags: ";
                     for (int j = 0; j < targetObject.Flags.Count; j++){
                         
-                        output = output + $"'{targetObject.Flags[j]}', ";
+                        copyData = copyData + $"'{targetObject.Flags[j]}', ";
                         
                     }
                     // remove the ',' from the end of the string
-                    output = output.Remove(output.Length - 1, 1);
+                    copyData = copyData.Remove(copyData.Length - 1, 1);
+
+                    // add the string to output. Note its 3 tabs deep.
+                    output.Add((copyData, 3));
 
                     if (targetObject.Paramiters != null){
-                        output = output + $"\n              Peramiters: ";
-                        output = output + $"{targetObject.Paramiters}";
+                        copyData = $"Peramiters: ";
+                        copyData = copyData + $"{targetObject.Paramiters}";
+
+                        output.Add((copyData, 3));
                     }
                     
                     
@@ -553,7 +618,9 @@ public abstract class functionClass{
             }
         }
         else{
-            output = "No Supported Flags.";
+            output =new List<(string, int)>{
+                ("        No Supported Flags.", 2)
+            };
         }
 
         return output;
