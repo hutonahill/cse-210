@@ -33,7 +33,8 @@ public static class Program{
         running = true;
 
         functionObjects = new List<functionClass>{
-            new Quit(), new BreathingFunction()
+            new Quit(), new BreathingFunction(), new ReflectionFunction(),
+            new ListingFunction()
         };
         
         // set up the command framework
@@ -615,7 +616,7 @@ public abstract class functionClass{
                         
                     }
                     // remove the ',' from the end of the string
-                    copyData = copyData.Remove(copyData.Length - 1, 1);
+                    copyData = copyData.Remove(copyData.Length - 2, 2);
 
                     // add the string to output. Note its 3 tabs deep.
                     output.Add((copyData, 3));
@@ -935,7 +936,6 @@ class Quit:functionClass{
         };
 
         FlagObjects = new List<flagClass>{
-            new testFlag()
         };
 
         FlagRegistry = new Dictionary<string, flagClass>();
@@ -948,28 +948,6 @@ class Quit:functionClass{
     }
 }
 
-
-class testFlag:flagClass{
-
-    public testFlag(){
-        Title = "Testing Flag";
-        Discription = "Makes sure the flag system is working properly";
-        Flags = new List<string>{
-            "-t", "-test"
-        };
-        Paramiters = "string peram - sting to output";
-    }
-    
-
-    public override void run(string peramiter){
-        if (peramiter == ""){
-            Program.print($"{Title} requires a peramiter");
-        }
-        else{
-            Program.print(peramiter);
-        }
-    }
-}
 
 // activity structure
 abstract class activityClass{
@@ -1201,10 +1179,12 @@ class BreathingActivity:activityClass{
 
             // preform count down 
             for (int i = holdTime; i > 0; i--){
-                Program.printNoLine($"{i}");
+                string iString = i.ToString();
+                Program.printNoLine(iString);
                 wait(1000);
                 timeCounter = timeCounter + 1000;
-                Program.printNoLine("\b \b");
+                
+                Program.delLine();
             }
 
             msgs.Reverse();
@@ -1467,7 +1447,9 @@ class ReflectionActivity:activityClass{
             randIndex = rand.Next(questions.Count);
 
             // display it to the user
+            Program.print();
             Program.print(questions[randIndex]);
+            
 
             // spin for the alloted ammount of time
             spin(reflectSeconds);
@@ -1550,3 +1532,228 @@ class reflectTime:flagClass{
     }
 
 }
+
+
+//  Listeneing Actvity
+class ListingFunction:functionClass{
+    
+    private string listingPath = "ListingData.json";
+
+    public ListingFunction(){
+        Title = "Listing";
+
+        Discription = "Runs the listing activity";
+
+        CommandInputs = new List<string>{
+            "list", "listing"
+        };
+
+        FlagObjects = new List<flagClass>{
+            new listActivetyTime(), new countDown()
+        };
+
+        FlagRegistry = new Dictionary<string, flagClass>();
+
+        constructFlagRegistry();
+    }
+
+    public ListingFunction(bool GetingFunctions){}
+
+    protected override void runNoFlag(){
+        ListingActivty listingActivty = new ListingActivty();
+         listingActivty.runActvity();
+
+    }
+
+    public List<string> loadListingData(){
+        if (File.Exists(listingPath) == true){
+            string jsonString = File.ReadAllText(listingPath);
+
+            if (jsonString != ""){
+                ListingJson listingJson =
+                JsonSerializer.Deserialize<ListingJson>(jsonString)!;
+
+                
+                return listingJson.questions;
+            }
+            else{
+                return new List<string>();
+            }
+            
+        }
+        else{
+            File.Create(listingPath);
+            return new List<string>();
+        }
+        
+        
+    }
+
+    public void saveListingData(List<string> questionsList){
+        ListingJson listingJson;
+        string jsonString;
+        
+        if (File.Exists(listingPath) == false){
+            
+            File.Create(listingPath);
+
+            listingJson = new ListingJson(){
+                questions = new List<string>()
+            };
+
+            jsonString = JsonSerializer.Serialize<ListingJson>(listingJson);
+            File.WriteAllText(listingPath, jsonString);
+        }
+        
+
+
+        listingJson = new ListingJson(){
+            questions = questionsList
+        };
+
+        jsonString = JsonSerializer.Serialize<ListingJson>(listingJson);
+        File.WriteAllText(listingPath, jsonString);
+        
+        
+        
+    }
+
+    
+}
+
+class ListingJson{
+    public List<string> questions {get; set;}
+}
+
+class ListingActivty:activityClass{
+    public int countDown = 5;
+    
+    public ListingActivty(){
+        IntroMsg = "Welcome to the Listing Activity";
+
+	    minForActivity = 0;
+
+	    activetyDiscription = (
+            "This activity will help you reflect on the good things in your " + 
+            "life by having you list as many things as you can in a certain area."
+        );
+
+	    activetyTitle = "Listing Activity";
+    }
+
+    protected override int activety(){
+
+        //get the start time
+        DateTime startTime = DateTime.UtcNow;
+        double MSElapsed = 0;
+        
+        // load in functions from the function class
+        ListingFunction listingFunction = new ListingFunction(true);
+
+        // load the list of questions
+        List<string> questions = listingFunction.loadListingData();
+
+        Random rand = new Random();
+
+        // pick a question to ask the user
+        int randIndex = rand.Next(questions.Count);
+
+        //ask the question
+        Program.print(questions[randIndex]);
+
+        for (int i = countDown; i > 0; i--){
+            Program.print($"{i}");
+            wait(1000);
+        }
+        Program.print();
+        int counter = 0;
+
+        int maxTime = minForActivity*1000*60;
+
+        // determin how much time has elapsed.
+        MSElapsed = DateTime.UtcNow.Subtract(startTime).TotalMilliseconds;
+
+        while (MSElapsed < maxTime){
+            
+            // get a reasponce from the user
+            Program.input();
+
+            // count the responce
+            counter ++;
+            // determin how much time has elapsed.
+            MSElapsed = DateTime.UtcNow.Subtract(startTime).TotalMilliseconds;
+        }
+        
+        Program.print($"You listed {counter} item(s)");
+
+        // determin how much time has elapsed.
+        MSElapsed = DateTime.UtcNow.Subtract(startTime).TotalMilliseconds;
+
+        return Convert.ToInt32(MSElapsed);
+    }
+
+    private void wait(int milliseconds){
+        System.Threading.Thread.Sleep(milliseconds);
+    }
+}
+
+class listActivetyTime:flagClass{
+    
+    public listActivetyTime(){
+        Title = "Activity Time";
+        
+        Discription = "Allows the user to pass to the " + 
+        "length of the actvity in the function call.";
+        
+        Flags = new List<string>{
+            "-at", "-activityTime"
+        };
+        
+        Paramiters = "int minutes - the number of minutes the actvity will " + 
+        "last.";
+    }
+
+    public override void run(string peramiter){
+        
+        ListingActivty listingActivty = new ListingActivty();
+
+        int? mins = listingActivty.StringToInt(peramiter, 1);
+
+        if (mins != null){
+            listingActivty.runActvity(mins ?? 0);
+        }
+        
+    }
+
+}
+
+class countDown:flagClass{
+    public countDown(){
+        Title = "Count Down";
+        
+        Discription = "Allows the user to change to the " + 
+        "length of the count down before the user can respond";
+        
+        Flags = new List<string>{
+            "-cd", "-countDown", "-countdown"
+        };
+        
+        Paramiters = "int seconds - the number of seconds the program will " + 
+        "count down for before the user can start listing";
+    }
+
+    public override void run(string peramiter){
+        
+        ListingActivty listingActivty = new ListingActivty();
+
+        int? sec = listingActivty.StringToInt(peramiter, 1);
+
+        if (sec != null){
+            listingActivty.countDown = sec ?? 0;
+
+            listingActivty.runActvity();
+        }
+        
+    }
+}
+
