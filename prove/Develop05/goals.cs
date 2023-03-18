@@ -4,15 +4,31 @@ using System.Text.Json;
 
 public static class GoalRegistry{
 
+    static GoalRegistry(){
+        loadGoals();
+    }
+    public static string goalType = "";
     public static void newGoal(string CommandPath){
-        string inputType = Program.input("What type of goal would you like to set?").ToLower();
+        
         
         CommandPath = CommandPath + "/newGoal";
 
         bool validInput = false;
 
         while (validInput == false){
-            if (inputType == "simple"){
+            string inputType;
+            if (goalType == ""){
+                inputType = Program.input("What type of goal would you like to set?").ToLower();
+            }
+            else{
+                inputType = goalType.ToLower();
+            }
+            
+            if (inputType == "back"){
+                validInput = true;
+            }
+
+            else if (inputType == "simple"){
                 validInput = true;
                 newSimpleGoal(CommandPath);
             }
@@ -26,33 +42,55 @@ public static class GoalRegistry{
             }
             else {
                 Program.print("You must input 'simple', 'eternal', or 'checklist'.");
+                
+                // if the goal type was passed in via the command, instead as 
+                // part of the newGoal() method, dont loop.
+                if (goalType != ""){
+                    validInput = true;
+                }
             }
         }
+
+        goalType = "";
         
     }
+
+    public static string goalTitle = "";
 
     private static void newSimpleGoal(string CommandPath){
         string title = "";
 
         bool validInput = false;
+        bool error = false;
 
         List<string> keys = Goals.Keys.ToList();
 
         while (validInput == false){
-            title = Program.input("What should this simple goal be called: ");
+            if (goalTitle == ""){
+                title = Program.input("What should this simple goal be called: ");
+            }
+            else{
+                title = goalTitle;
+            }
+            
 
             if (title == "back"){
                 validInput = true;
             }
             else if (keys.Contains(title.ToLower())){
                 Program.print("That title already exists. Please try again.");
+
+                if (goalTitle != ""){
+                    validInput = true;
+                    error = true;
+                }
             }
             else{
                 validInput = true;
             }
         }
 
-        if (title.ToLower() != "back"){
+        if (title.ToLower() != "back" && error == false){
 
             
             string discription = Program.input($"Please discribe {title} goal: ");
@@ -88,6 +126,9 @@ public static class GoalRegistry{
                 }
             }
         }
+
+        goalTitle = "";
+        saveGoals();
     }
 
     private static void newEternalGoal(string CommandPath){
@@ -95,24 +136,36 @@ public static class GoalRegistry{
         string title = "";
 
         bool validInput = false;
+        bool error = false;
 
         List<string> keys = Goals.Keys.ToList();
 
         while (validInput == false){
-            title = Program.input("What should this eternal goal be called: ");
+            if (goalTitle == ""){
+                title = Program.input("What should this eternal goal be called: ");
+            }
+            else{
+                title = goalTitle;
+            }
+            
 
             if (title == "back"){
                 validInput = true;
             }
             else if (keys.Contains(title.ToLower())){
                 Program.print("That title already exists. Please try again.");
+
+                if (goalTitle != ""){
+                    validInput = true;
+                    error = true;
+                }
             }
             else{
                 validInput = true;
             }
         }
 
-        if (title.ToLower() != "back"){
+        if (title.ToLower() != "back" && error == false){
 
             
             string discription = Program.input($"Please discribe {title} goal: ");
@@ -148,6 +201,9 @@ public static class GoalRegistry{
                 }
             }
         }
+
+        goalTitle = "";
+        saveGoals();
     }
 
     private static void newChecklistGoal(string CommandPath){
@@ -155,23 +211,36 @@ public static class GoalRegistry{
         string title = "";
 
         bool validInput = false;
+        bool error = false;
 
         List<string> keys = Goals.Keys.ToList();
 
         while (validInput == false){
-            title = Program.input("What should this checklist goal be called: ");
+            if (goalTitle == ""){
+                title = Program.input("What should this checklist goal be called: ");
+            }
+            else{
+                title = goalTitle;
+            }
+            
 
             if (title == "back"){
                 validInput = true;
             }
             else if (keys.Contains(title.ToLower())){
                 Program.print("That title already exists. Please try again.");
+
+                if (goalTitle != ""){
+                    validInput = true;
+                    error = true;
+                }
             }
             else{
                 validInput = true;
             }
         }
-        if (title.ToLower() != "back"){
+
+        if (title.ToLower() != "back" && error == false){
 
             
             string discription = Program.input($"Please discribe {title} goal: ");
@@ -248,7 +317,11 @@ public static class GoalRegistry{
                 }
             }
         }
+
+        goalTitle = "";
+        saveGoals();
     }
+
 
     public static string TitleToComplite = "";
 
@@ -279,10 +352,14 @@ public static class GoalRegistry{
             else if (keys.Contains(inputTitle) == false){
                 Program.print($"There is no stored goal with the tile: {inputTitle}");
             }
+            else{
+                validInput = true;
+            }
         }
 
         Goals[inputTitle].onCompletion();
         TitleToComplite = "";
+        saveGoals();
     }
 
     public static string TitleToDisplay = "";
@@ -320,6 +397,8 @@ public static class GoalRegistry{
             lst.Add(Goals[gck].endcode());
         }
 
+        lst.Insert(0, $"{UserScore}");
+
         GoalJson goalJson = new GoalJson(){
             goalList = lst
         };
@@ -337,6 +416,9 @@ public static class GoalRegistry{
                 JsonSerializer.Deserialize<GoalJson>(jsonString)!;
 
                 List<string> rawList = reflectionJson.goalList;
+
+                UserScore = int.Parse(rawList[0]);
+                rawList.RemoveAt(0);
 
                 List<goalClass> lst = new List<goalClass>();
 

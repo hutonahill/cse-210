@@ -33,7 +33,8 @@ public static class Program{
         running = true;
 
         functionObjects = new List<functionClass>{
-            new QuitFunction()
+            new QuitFunction(), new newGoal(), new compliteGoal(), new diplayGoals(),
+            new getPoints()
         };
         
         // set up the command framework
