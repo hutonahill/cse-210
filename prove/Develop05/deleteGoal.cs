@@ -1,15 +1,15 @@
-class diplayGoals:functionClass{
-    public diplayGoals(){
-        Title = "Display Goals";
+class DeleteGoal:functionClass{
+    public DeleteGoal(){
+        Title = "Delete Goal";
 
-        Discription = "Displays all goals";
+        Discription = "Deleates a goal";
 
         CommandInputs = new List<string>{
-            "dg", "displaygoals", "displayGoals", "displaygoal", "displayGoal",
-            "dG"
+            "delg", "deletegoal", "deleteGoal", "delG"
         };
 
         FlagObjects = new List<flagClass>{
+            new GoalToDeleteFlag()
         };
 
         FlagRegistry = new Dictionary<string, flagClass>();
@@ -18,18 +18,17 @@ class diplayGoals:functionClass{
     }
 
     protected override void runNoFlag(){
-        GoalRegistry.displayGoals($"{Program.Title}/{Title}");
+        GoalRegistry.DeleteGoal($"{Program.Title}/{Title}");
     }
-
 }
 
-class GoalToDisplayFlag:flagClass{
+class GoalToDeleteFlag:flagClass{
 
-    public GoalToDisplayFlag(){
+    public GoalToDeleteFlag(){
         Title = "Goal To Delete";
         Discription = "Allows the user to pass in the goal to delete in the command.";
         Flags = new List<string>{
-            "-goaltodisplay", "-goalToDisplay", "-gtd", "-gTD", "-title"
+            "-goaltodelete", "-goalToDelete", "-gtdel", "-gTDel", "-title"
         };
         Paramiters = "string title - the title of the goal to delete";
     }
@@ -40,7 +39,8 @@ class GoalToDisplayFlag:flagClass{
             Program.print($"{Title} requires a peramiter");
         }
         else{
-            GoalRegistry.TitleToDisplay = peramiter;
+            GoalRegistry.TitleToDelete = peramiter;
         }
     }
 }
+

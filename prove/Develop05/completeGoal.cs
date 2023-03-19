@@ -21,3 +21,25 @@ class compliteGoal:functionClass{
     }
 
 }
+
+class GoalToCompliteFlag:flagClass{
+
+    public GoalToCompliteFlag(){
+        Title = "Goal To Complite";
+        Discription = "Allows the user to pass in the goal to complite in the command.";
+        Flags = new List<string>{
+            "-goaltocomplite", "-goalToComplite", "-gtc", "-gTC", "-title"
+        };
+        Paramiters = "string title - the title of the goal to delete";
+    }
+    
+
+    public override void run(string peramiter){
+        if (peramiter == ""){
+            Program.print($"{Title} requires a peramiter");
+        }
+        else{
+            GoalRegistry.TitleToDelete = peramiter;
+        }
+    }
+}

@@ -7,6 +7,7 @@ public static class GoalRegistry{
     static GoalRegistry(){
         loadGoals();
     }
+
     public static string goalType = "";
     public static void newGoal(string CommandPath){
         
@@ -54,6 +55,7 @@ public static class GoalRegistry{
         goalType = "";
         
     }
+
 
     public static string goalTitle = "";
 
@@ -354,12 +356,11 @@ public static class GoalRegistry{
             }
             else{
                 validInput = true;
+                Goals[inputTitle].onCompletion();
+                TitleToComplite = "";
+                saveGoals();
             }
         }
-
-        Goals[inputTitle].onCompletion();
-        TitleToComplite = "";
-        saveGoals();
     }
 
     public static string TitleToDisplay = "";
@@ -370,6 +371,10 @@ public static class GoalRegistry{
         if (TitleToDisplay == ""){
             foreach(string key in keys){
                 Program.print(Goals[key].display());
+            }
+
+            if (keys.Count == 0){
+                Program.print("No Goals");
             }
         }
         else{
@@ -384,6 +389,9 @@ public static class GoalRegistry{
         }
         
     }
+
+
+    private static string goalPath = "goals.json";
 
     private static void saveGoals(){
         if (File.Exists(goalPath) == false){
@@ -456,12 +464,88 @@ public static class GoalRegistry{
         }
     }
 
+
     private static Dictionary<string, goalClass> Goals = new Dictionary<string, goalClass>();
 
     public static int UserScore = 0;
 
-    private static string goalPath = "goals.json";
+    public static string passToEditScore = null;
+
+    public static void editScore(){
         
+
+        bool validInput = false;
+
+        while (validInput == false){
+            string rawInput;
+            if (passToEditScore == null){
+                rawInput = Program.input("Input a value to add to user score: ");
+            }
+            else{
+                rawInput = passToEditScore;
+            }
+
+            int scoreEditValue;
+
+            if (rawInput == "back"){
+                validInput = true;
+            }
+            else if (int.TryParse(rawInput, out scoreEditValue) == false){
+                if (passToEditScore != null){
+                    validInput = true;
+                }
+            }
+            else{
+                validInput = true;
+                UserScore = UserScore + scoreEditValue;
+
+                Program.print($"{UserScore} Points");
+            }
+        }
+
+        passToEditScore = null;
+        saveGoals();
+    }
+
+    public static string TitleToDelete = null;
+
+    public static void DeleteGoal(string CommandPath){
+        
+        CommandPath = CommandPath + "/DeleteGoal";
+        
+        string inputTitle = "";
+
+        List<string> keys = Goals.Keys.ToList();
+
+        bool validInput = false;
+        while (validInput == false){
+
+            if (TitleToComplite != null){
+                inputTitle = TitleToDelete;
+            }
+            else{
+                inputTitle = Program.input("What goal would you like to complete: ");
+            }
+            
+
+            if (inputTitle.ToLower() == "back"){
+                validInput = true;
+            }
+            else if (inputTitle.ToLower() == "help"){
+                displayGoals(CommandPath);
+            }
+            else if (keys.Contains(inputTitle) == false){
+                Program.print($"There is no stored goal with the tile: {inputTitle}");
+            }
+            else{
+                validInput = true;
+                Goals.Remove(inputTitle);
+                Program.print($"{inputTitle} Goal Removed.");
+            }
+        }
+
+        saveGoals();
+    }
 }
 
 class GoalJson{
@@ -674,7 +758,7 @@ public class Eternal:goalClass{
         }
 
         // Split the encoded string by commas to separate each DateTime
-        string[] dateTimeStrings = encodedClass.Split(',');
+        string[] dateTimeStrings = splitCode[5].Split(',');
 
         // Loop through each DateTime string and parse it into a DateTime object
         foreach (string dateTimeString in dateTimeStrings){

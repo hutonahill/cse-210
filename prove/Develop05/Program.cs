@@ -34,7 +34,7 @@ public static class Program{
 
         functionObjects = new List<functionClass>{
             new QuitFunction(), new newGoal(), new compliteGoal(), new diplayGoals(),
-            new getPoints()
+            new getPoints(), new editPoints(), new DeleteGoal()
         };
         
         // set up the command framework
