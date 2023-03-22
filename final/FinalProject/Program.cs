@@ -347,6 +347,25 @@ public static class Program{
         }
     }
 
+    /// <summary>
+    /// Prints the given text to the console, with optional indentation and line wrapping.
+    /// </summary>
+    /// <param name="text">The text to print to the console.</param>
+    /// <param name="tabLevel">The number of indentation levels to apply to the text (default is 0).</param>
+    /// <param name="extraTab">The number of additional indentation levels to apply to the first line of the text (default is 1).</param>
+    /// <param name="tabWidth">The width of each indentation level in spaces (default is 4).</param>
+    /// <returns>None</returns>
+    /// <remarks>
+    /// If the length of the text plus the indentation exceeds the console window width, the text is wrapped onto multiple lines.
+    /// The method also calculates the width of the console window in characters and uses this to determine the line wrapping.
+    /// The text is split into words, and each word is printed on the same line until the line width is exceeded.
+    /// </remarks>
+    /// <example>
+    /// To print a message with 2 levels of indentation and 8 spaces per level:
+    /// <code>
+    ///     printf("Hello, world!", 2, 0, 8);
+    /// </code>
+    /// </example>
     public static void printf(string text, int tabLevel = 0, int extraTab = 1, int tabWidth = 4){
         // Get the width of the console window in characters.
         int consoleWidth = Console.WindowWidth - 7;
